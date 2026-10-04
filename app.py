@@ -7,6 +7,8 @@ from pathlib import Path
 import requests
 from flask import Flask, jsonify, request, send_from_directory
 
+BASE_DIR = Path(__file__).resolve().parent
+
 DB_PATH = Path(os.environ.get("DB_PATH", "/tmp/greenleaf.db"))
 app = Flask(__name__, static_folder="static")
 
