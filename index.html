@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Greenleaf</title>
+  <style>
+    *{box-sizing:border-box} body{margin:0;font-family:Arial,sans-serif;background:#f6f7f6;color:#111}
+    .wrap{max-width:760px;margin:auto;padding:28px 18px 100px}
+    h1{margin:0 0 6px;font-size:38px}.sub{color:#18824b;margin-bottom:22px}
+    .card,.panel{background:#fff;border-radius:20px;padding:20px;margin:14px 0;box-shadow:0 5px 24px #0000000b}
+    .price{font-size:22px;font-weight:700;margin-top:12px}.muted{color:#555}
+    button{border:0;border-radius:12px;padding:12px 16px;background:#17814b;color:#fff;font-size:16px}
+    button.secondary{background:#eee;color:#111}.row{display:flex;gap:10px;align-items:center;justify-content:space-between}
+    input,textarea,select{width:100%;padding:13px;border:1px solid #ddd;border-radius:12px;font-size:16px;margin:6px 0 12px}
+    .qty{display:flex;align-items:center;gap:10px}.qty button{padding:7px 11px}
+    .hidden{display:none}.total{font-size:24px;font-weight:700;margin:15px 0}
+    .notice{padding:12px;border-radius:12px;background:#eef8f1;margin-top:12px}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Greenleaf</h1>
+  <div class="sub" id="catalogStatus">Загрузка каталога…</div>
+
+  <div id="catalog"></div>
+
+  <div class="panel">
+    <div class="row"><h2>Корзина</h2><span id="cartCount">0</span></div>
+    <div id="cart"></div>
+    <div class="total" id="cartTotal">Итого: 0 TMT</div>
+    <button id="checkoutBtn" onclick="showCheckout()">Оформить заказ</button>
+  </div>
+
+  <div class="panel hidden" id="checkout">
+    <h2>Оформление заказа</h2>
+    <label>Имя<input id="name" placeholder="Например, Alina"></label>
+    <label>Телефон<input id="phone" placeholder="+993 ..."></label>
+    <label>Город<input id="city" placeholder="Туркменбаши"></label>
+    <label>Способ получения
+      <select id="method">
+        <option value="Самовывоз">Самовывоз</option>
+        <option value="Доставка">Доставка</option>
+      </select>
+    </label>
+    <label>Адрес / пункт выдачи<input id="address" placeholder="Адрес или название пункта"></label>
+    <label>Комментарий<textarea id="comment" placeholder="Дополнительная информация"></textarea></label>
+    <div class="row">
+      <button class="secondary" onclick="hideCheckout()">Назад</button>
+      <button onclick="submitOrder()">Отправить заказ</button>
+    </div>
+    <div id="orderResult"></div>
+  </div>
+</div>
+
+<script src="/static/script.js"></script>
+</body>
+</html>
