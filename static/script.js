@@ -122,7 +122,7 @@ async function submitOrder() {
     }
 
     result.innerHTML =
-      `<div class="notice">Заказ №${data.order_id} создан. Сумма: ${money(data.total)}.</div>`;
+  `<div class="notice">Заказ успешно оформлен. Сумма: ${money(data.total)}.</div>`;
 
     if (!data.telegram_sent) {
       result.innerHTML +=
