@@ -1,7 +1,8 @@
 import os
 import json
-import hashlib
+import time
 import hmac
+import hashlib
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import parse_qsl
@@ -37,6 +38,16 @@ DEFAULT_PRODUCTS = [
         "price": 350,
     },
 ]
+
+
+ORDER_STATUSES = {
+    "new": "Новый",
+    "accepted": "Принят",
+    "packing": "Собирается",
+    "delivery": "Передан в доставку",
+    "completed": "Завершён",
+    "cancelled": "Отменён",
+}
 
 
 def db():
@@ -169,46 +180,68 @@ def send_telegram(text):
 
 
 def verify_admin_telegram():
+    """
+    Проверяет Telegram Web App initData.
+
+    Клиент отправляет:
+    X-Telegram-Init-Data: Telegram.WebApp.initData
+
+    Сервер проверяет подпись Telegram и ID пользователя.
+    """
+
     init_data = request.headers.get(
         "X-Telegram-Init-Data",
-        "",
+        ""
     ).strip()
-
-    if not init_data:
-        return False
 
     bot_token = os.environ.get(
         "BOT_TOKEN",
-        "",
+        ""
     ).strip()
 
     admin_id = os.environ.get(
         "ADMIN_ID",
-        "",
+        ""
     ).strip()
 
-    if not bot_token or not admin_id:
+    if not init_data or not bot_token or not admin_id:
         return False
 
     try:
-        data = dict(
+        parsed = dict(
             parse_qsl(
                 init_data,
                 keep_blank_values=True,
             )
         )
 
-        received_hash = data.pop(
+        received_hash = parsed.pop(
             "hash",
-            "",
+            ""
         )
 
         if not received_hash:
             return False
 
+        auth_date = int(
+            parsed.get(
+                "auth_date",
+                "0"
+            )
+        )
+
+        if not auth_date:
+            return False
+
+        # Не принимаем слишком старые initData.
+        if abs(time.time() - auth_date) > 86400:
+            return False
+
         data_check_string = "\n".join(
             f"{key}={value}"
-            for key, value in sorted(data.items())
+            for key, value in sorted(
+                parsed.items()
+            )
         )
 
         secret_key = hmac.new(
@@ -229,30 +262,33 @@ def verify_admin_telegram():
         ):
             return False
 
-        user_data = data.get(
+        user_json = parsed.get(
             "user",
-            "",
+            ""
         )
 
-        if not user_data:
+        if not user_json:
             return False
 
-        telegram_user = json.loads(
-            user_data
+        user_data = json.loads(user_json)
+
+        telegram_user_id = str(
+            user_data.get("id", "")
         )
 
-        return (
-            str(
-                telegram_user.get(
-                    "id",
-                    "",
-                )
-            )
-            == admin_id
-        )
+        return telegram_user_id == admin_id
 
     except Exception:
         return False
+
+
+def require_admin():
+    if not verify_admin_telegram():
+        return jsonify({
+            "error": "Доступ запрещён"
+        }), 403
+
+    return None
 
 
 @app.get("/")
@@ -278,31 +314,37 @@ def api_products():
     })
 
 
+@app.get("/api/admin/check")
+def admin_check():
+    return jsonify({
+        "ok": True,
+        "admin": verify_admin_telegram(),
+    })
+
+
 @app.post("/api/products")
 def add_product():
+    denied = require_admin()
+
+    if denied:
+        return denied
+
     data = request.get_json(
         silent=True
     ) or {}
 
     name = str(
-        data.get(
-            "name",
-            "",
-        )
+        data.get("name", "")
     ).strip()
 
     description = str(
-        data.get(
-            "description",
-            "",
-        )
+        data.get("description", "")
     ).strip()
 
     try:
         price = float(
             data.get("price")
         )
-
     except (
         TypeError,
         ValueError,
@@ -354,29 +396,27 @@ def add_product():
 
 @app.put("/api/products/<int:product_id>")
 def update_product(product_id):
+    denied = require_admin()
+
+    if denied:
+        return denied
+
     data = request.get_json(
         silent=True
     ) or {}
 
     name = str(
-        data.get(
-            "name",
-            "",
-        )
+        data.get("name", "")
     ).strip()
 
     description = str(
-        data.get(
-            "description",
-            "",
-        )
+        data.get("description", "")
     ).strip()
 
     try:
         price = float(
             data.get("price")
         )
-
     except (
         TypeError,
         ValueError,
@@ -429,6 +469,11 @@ def update_product(product_id):
 
 @app.delete("/api/products/<int:product_id>")
 def delete_product(product_id):
+    denied = require_admin()
+
+    if denied:
+        return denied
+
     conn = db()
 
     try:
@@ -465,45 +510,27 @@ def create_order():
     ) or {}
 
     name = str(
-        data.get(
-            "customer_name",
-            "",
-        )
+        data.get("customer_name", "")
     ).strip()
 
     phone = str(
-        data.get(
-            "phone",
-            "",
-        )
+        data.get("phone", "")
     ).strip()
 
     city = str(
-        data.get(
-            "city",
-            "",
-        )
+        data.get("city", "")
     ).strip()
 
     method = str(
-        data.get(
-            "delivery_method",
-            "",
-        )
+        data.get("delivery_method", "")
     ).strip()
 
     address = str(
-        data.get(
-            "address",
-            "",
-        )
+        data.get("address", "")
     ).strip()
 
     comment = str(
-        data.get(
-            "comment",
-            "",
-        )
+        data.get("comment", "")
     ).strip()
 
     items = data.get(
@@ -538,7 +565,7 @@ def create_order():
             qty = int(
                 item.get(
                     "quantity",
-                    1,
+                    1
                 )
             )
 
@@ -551,7 +578,10 @@ def create_order():
                 "error": "Некорректный товар в корзине"
             }), 400
 
-        if qty < 1 or pid not in catalog:
+        if (
+            qty < 1
+            or pid not in catalog
+        ):
             return jsonify({
                 "error": "Некорректный товар в корзине"
             }), 400
@@ -649,7 +679,8 @@ def create_order():
 
     for item in normalized:
         lines.append(
-            f"• {item['name']} × {item['quantity']} — "
+            f"• {item['name']} × "
+            f"{item['quantity']} — "
             f"{item['line_total']:.0f} TMT"
         )
 
@@ -678,11 +709,10 @@ def create_order():
 
 @app.get("/api/orders")
 def list_orders():
+    denied = require_admin()
 
-    if not verify_admin_telegram():
-        return jsonify({
-            "error": "Доступ запрещён"
-        }), 403
+    if denied:
+        return denied
 
     conn = db()
 
@@ -724,9 +754,10 @@ def list_orders():
                 )
 
                 if item["created_at"]:
-                    item["created_at"] = item[
-                        "created_at"
-                    ].isoformat()
+                    item["created_at"] = (
+                        item["created_at"]
+                        .isoformat()
+                    )
 
                 result.append(item)
 
@@ -738,6 +769,61 @@ def list_orders():
         conn.close()
 
 
+@app.patch("/api/orders/<int:order_id>/status")
+def update_order_status(order_id):
+    denied = require_admin()
+
+    if denied:
+        return denied
+
+    data = request.get_json(
+        silent=True
+    ) or {}
+
+    status = str(
+        data.get("status", "")
+    ).strip()
+
+    if status not in ORDER_STATUSES:
+        return jsonify({
+            "error": "Некорректный статус"
+        }), 400
+
+    conn = db()
+
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE orders
+                SET status = %s
+                WHERE id = %s
+                """,
+                (
+                    status,
+                    order_id,
+                ),
+            )
+
+            updated = cur.rowcount
+
+        conn.commit()
+
+    finally:
+        conn.close()
+
+    if updated == 0:
+        return jsonify({
+            "error": "Заказ не найден"
+        }), 404
+
+    return jsonify({
+        "ok": True,
+        "status": status,
+        "status_label": ORDER_STATUSES[status],
+    })
+
+
 init_db()
 
 
@@ -747,7 +833,7 @@ if __name__ == "__main__":
         port=int(
             os.environ.get(
                 "PORT",
-                "5000",
+                "5000"
             )
-        ),
+        )
     )
