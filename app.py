@@ -1,7 +1,10 @@
 import os
 import json
+import hashlib
+import hmac
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.parse import parse_qsl
 
 import requests
 import psycopg2
@@ -165,6 +168,93 @@ def send_telegram(text):
         return False, str(exc)
 
 
+def verify_admin_telegram():
+    init_data = request.headers.get(
+        "X-Telegram-Init-Data",
+        "",
+    ).strip()
+
+    if not init_data:
+        return False
+
+    bot_token = os.environ.get(
+        "BOT_TOKEN",
+        "",
+    ).strip()
+
+    admin_id = os.environ.get(
+        "ADMIN_ID",
+        "",
+    ).strip()
+
+    if not bot_token or not admin_id:
+        return False
+
+    try:
+        data = dict(
+            parse_qsl(
+                init_data,
+                keep_blank_values=True,
+            )
+        )
+
+        received_hash = data.pop(
+            "hash",
+            "",
+        )
+
+        if not received_hash:
+            return False
+
+        data_check_string = "\n".join(
+            f"{key}={value}"
+            for key, value in sorted(data.items())
+        )
+
+        secret_key = hmac.new(
+            b"WebAppData",
+            bot_token.encode(),
+            hashlib.sha256,
+        ).digest()
+
+        calculated_hash = hmac.new(
+            secret_key,
+            data_check_string.encode(),
+            hashlib.sha256,
+        ).hexdigest()
+
+        if not hmac.compare_digest(
+            calculated_hash,
+            received_hash,
+        ):
+            return False
+
+        user_data = data.get(
+            "user",
+            "",
+        )
+
+        if not user_data:
+            return False
+
+        telegram_user = json.loads(
+            user_data
+        )
+
+        return (
+            str(
+                telegram_user.get(
+                    "id",
+                    "",
+                )
+            )
+            == admin_id
+        )
+
+    except Exception:
+        return False
+
+
 @app.get("/")
 def index():
     return send_from_directory(
@@ -190,14 +280,33 @@ def api_products():
 
 @app.post("/api/products")
 def add_product():
-    data = request.get_json(silent=True) or {}
+    data = request.get_json(
+        silent=True
+    ) or {}
 
-    name = str(data.get("name", "")).strip()
-    description = str(data.get("description", "")).strip()
+    name = str(
+        data.get(
+            "name",
+            "",
+        )
+    ).strip()
+
+    description = str(
+        data.get(
+            "description",
+            "",
+        )
+    ).strip()
 
     try:
-        price = float(data.get("price"))
-    except (TypeError, ValueError):
+        price = float(
+            data.get("price")
+        )
+
+    except (
+        TypeError,
+        ValueError,
+    ):
         return jsonify({
             "error": "Некорректная цена"
         }), 400
@@ -245,14 +354,33 @@ def add_product():
 
 @app.put("/api/products/<int:product_id>")
 def update_product(product_id):
-    data = request.get_json(silent=True) or {}
+    data = request.get_json(
+        silent=True
+    ) or {}
 
-    name = str(data.get("name", "")).strip()
-    description = str(data.get("description", "")).strip()
+    name = str(
+        data.get(
+            "name",
+            "",
+        )
+    ).strip()
+
+    description = str(
+        data.get(
+            "description",
+            "",
+        )
+    ).strip()
 
     try:
-        price = float(data.get("price"))
-    except (TypeError, ValueError):
+        price = float(
+            data.get("price")
+        )
+
+    except (
+        TypeError,
+        ValueError,
+    ):
         return jsonify({
             "error": "Некорректная цена"
         }), 400
@@ -306,7 +434,10 @@ def delete_product(product_id):
     try:
         with conn.cursor() as cur:
             cur.execute(
-                "DELETE FROM products WHERE id = %s",
+                """
+                DELETE FROM products
+                WHERE id = %s
+                """,
                 (product_id,),
             )
 
@@ -329,16 +460,56 @@ def delete_product(product_id):
 
 @app.post("/api/orders")
 def create_order():
-    data = request.get_json(silent=True) or {}
+    data = request.get_json(
+        silent=True
+    ) or {}
 
-    name = str(data.get("customer_name", "")).strip()
-    phone = str(data.get("phone", "")).strip()
-    city = str(data.get("city", "")).strip()
-    method = str(data.get("delivery_method", "")).strip()
-    address = str(data.get("address", "")).strip()
-    comment = str(data.get("comment", "")).strip()
+    name = str(
+        data.get(
+            "customer_name",
+            "",
+        )
+    ).strip()
 
-    items = data.get("items", [])
+    phone = str(
+        data.get(
+            "phone",
+            "",
+        )
+    ).strip()
+
+    city = str(
+        data.get(
+            "city",
+            "",
+        )
+    ).strip()
+
+    method = str(
+        data.get(
+            "delivery_method",
+            "",
+        )
+    ).strip()
+
+    address = str(
+        data.get(
+            "address",
+            "",
+        )
+    ).strip()
+
+    comment = str(
+        data.get(
+            "comment",
+            "",
+        )
+    ).strip()
+
+    items = data.get(
+        "items",
+        []
+    )
 
     if (
         not name
@@ -360,8 +531,16 @@ def create_order():
 
     for item in items:
         try:
-            pid = int(item.get("id"))
-            qty = int(item.get("quantity", 1))
+            pid = int(
+                item.get("id")
+            )
+
+            qty = int(
+                item.get(
+                    "quantity",
+                    1,
+                )
+            )
 
         except (
             TypeError,
@@ -379,19 +558,26 @@ def create_order():
 
         product = catalog[pid]
 
-        line_total = float(product["price"]) * qty
+        line_total = (
+            float(product["price"])
+            * qty
+        )
 
         normalized.append({
             "id": pid,
             "name": product["name"],
-            "price": float(product["price"]),
+            "price": float(
+                product["price"]
+            ),
             "quantity": qty,
             "line_total": line_total,
         })
 
         total += line_total
 
-    created_at = datetime.now(timezone.utc)
+    created_at = datetime.now(
+        timezone.utc
+    )
 
     conn = db()
 
@@ -482,16 +668,29 @@ def create_order():
         "order_id": order_id,
         "total": total,
         "telegram_sent": sent,
-        "telegram_error": "" if sent else telegram_error,
+        "telegram_error": (
+            ""
+            if sent
+            else telegram_error
+        ),
     })
 
 
 @app.get("/api/orders")
 def list_orders():
+
+    if not verify_admin_telegram():
+        return jsonify({
+            "error": "Доступ запрещён"
+        }), 403
+
     conn = db()
 
     try:
-        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        with conn.cursor(
+            cursor_factory=RealDictCursor
+        ) as cur:
+
             cur.execute("""
                 SELECT
                     id,
@@ -516,9 +715,13 @@ def list_orders():
             for row in rows:
                 item = dict(row)
 
-                item["items"] = item.pop("items_json")
+                item["items"] = item.pop(
+                    "items_json"
+                )
 
-                item["total"] = float(item["total"])
+                item["total"] = float(
+                    item["total"]
+                )
 
                 if item["created_at"]:
                     item["created_at"] = item[
@@ -542,6 +745,9 @@ if __name__ == "__main__":
     app.run(
         host="0.0.0.0",
         port=int(
-            os.environ.get("PORT", "5000")
+            os.environ.get(
+                "PORT",
+                "5000",
+            )
         ),
     )
