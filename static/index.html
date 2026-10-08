@@ -5,362 +5,1092 @@
 
   <meta
     name="viewport"
-    content="width=device-width,initial-scale=1"
+    content="width=device-width,initial-scale=1,viewport-fit=cover"
+  >
+
+  <meta
+    name="theme-color"
+    content="#ffffff"
   >
 
   <title>Greenleaf</title>
 
   <style>
+    :root {
+      --green: #16834b;
+      --green-dark: #0f6d3d;
+      --green-light: #eaf7ef;
+      --green-soft: #f3faf5;
+      --text: #111814;
+      --muted: #718078;
+      --border: #e7ece9;
+      --bg: #f7f9f7;
+      --white: #ffffff;
+      --danger: #d84c4c;
+      --shadow: 0 8px 30px rgba(17, 24, 20, .06);
+    }
+
     * {
       box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html {
+      scroll-behavior: smooth;
     }
 
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
-      background: #f6f7f6;
-      color: #111;
+      font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Arial,
+        sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
     }
 
-    .wrap {
-      max-width: 760px;
-      margin: auto;
-      padding: 28px 18px 100px;
-    }
-
-    h1 {
-      margin: 0 0 6px;
-      font-size: 38px;
-    }
-
-    .sub {
-      color: #18824b;
-      margin-bottom: 22px;
-    }
-
-    .card,
-    .panel {
-      background: #fff;
-      border-radius: 20px;
-      padding: 20px;
-      margin: 14px 0;
-      box-shadow: 0 5px 24px #0000000b;
-    }
-
-    .price {
-      font-size: 22px;
-      font-weight: 700;
-      margin-top: 12px;
-    }
-
-    .muted {
-      color: #555;
+    button,
+    input,
+    textarea,
+    select {
+      font: inherit;
     }
 
     button {
-      border: 0;
-      border-radius: 12px;
-      padding: 12px 16px;
-      background: #17814b;
-      color: #fff;
-      font-size: 16px;
+      cursor: pointer;
     }
 
-    button.secondary {
-      background: #eee;
-      color: #111;
+    .app {
+      max-width: 760px;
+      margin: 0 auto;
+      min-height: 100vh;
+      padding-bottom: 105px;
     }
 
-    button:disabled {
-      opacity: 0.5;
+    /* TOP BAR */
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(255,255,255,.94);
+      backdrop-filter: blur(18px);
+      border-bottom: 1px solid rgba(231,236,233,.8);
     }
 
-    .row {
+    .topbar-inner {
       display: flex;
-      gap: 10px;
       align-items: center;
       justify-content: space-between;
+      padding: 14px 18px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      color: var(--green);
+      font-size: 20px;
+      letter-spacing: -.5px;
+    }
+
+    .brand-mark {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: var(--green);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 21px;
+      box-shadow: 0 6px 18px rgba(22,131,75,.2);
+    }
+
+    .language-btn {
+      border: 1px solid var(--border);
+      background: white;
+      color: var(--text);
+      border-radius: 12px;
+      padding: 8px 11px;
+      font-size: 13px;
+      font-weight: 800;
+      min-width: 58px;
+    }
+
+    .language-btn:active {
+      transform: scale(.96);
+    }
+
+    /* CONTENT */
+
+    .content {
+      padding: 20px 18px 0;
+    }
+
+    .page {
+      display: none;
+      animation: pageIn .2s ease;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    @keyframes pageIn {
+      from {
+        opacity: 0;
+        transform: translateY(5px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* HOME */
+
+    .hero {
+      background:
+        linear-gradient(
+          145deg,
+          #eaf7ef 0%,
+          #ffffff 75%
+        );
+      border-radius: 28px;
+      padding: 28px 22px;
+      margin-bottom: 20px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      background: rgba(22,131,75,.07);
+      right: -50px;
+      top: -50px;
+    }
+
+    .hero-label {
+      color: var(--green);
+      font-weight: 800;
+      font-size: 13px;
+      margin-bottom: 10px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero h1 {
+      font-size: 34px;
+      line-height: 1.05;
+      letter-spacing: -1.5px;
+      margin: 0 0 12px;
+      max-width: 500px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero p {
+      color: var(--muted);
+      line-height: 1.5;
+      margin: 0 0 22px;
+      max-width: 520px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .primary-btn {
+      border: 0;
+      background: var(--green);
+      color: white;
+      border-radius: 15px;
+      padding: 14px 18px;
+      font-weight: 700;
+      box-shadow: 0 8px 20px rgba(22,131,75,.2);
+    }
+
+    .primary-btn:active {
+      transform: scale(.98);
+    }
+
+    .section-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 24px 0 12px;
+    }
+
+    .section-title h2 {
+      margin: 0;
+      font-size: 21px;
+      letter-spacing: -.5px;
+    }
+
+    .small-link {
+      border: 0;
+      background: transparent;
+      color: var(--green);
+      font-weight: 700;
+      padding: 5px;
+    }
+
+    /* CATALOG */
+
+    .catalog-status {
+      color: var(--muted);
+      font-size: 13px;
+      margin: 5px 0 14px;
+    }
+
+    .product-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 17px;
+      margin: 12px 0;
+      box-shadow: var(--shadow);
+    }
+
+    .product-info {
+      min-width: 0;
+    }
+
+    .product-name {
+      font-size: 18px;
+      font-weight: 800;
+      margin: 0 0 5px;
+    }
+
+    .product-description {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .product-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .product-price {
+      font-size: 20px;
+      font-weight: 850;
+    }
+
+    .add-btn {
+      width: 44px;
+      height: 44px;
+      border: 0;
+      border-radius: 14px;
+      background: var(--green);
+      color: white;
+      font-size: 25px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* CART */
+
+    .empty {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 30px 20px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .empty-icon {
+      font-size: 36px;
+      margin-bottom: 8px;
+    }
+
+    .cart-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 15px;
+      margin: 10px 0;
+    }
+
+    .cart-name {
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .cart-price {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .qty {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .qty button {
+      width: 34px;
+      height: 34px;
+      border: 0;
+      border-radius: 10px;
+      background: var(--green-light);
+      color: var(--green);
+      font-weight: 900;
+      font-size: 18px;
+    }
+
+    .cart-summary {
+      background: var(--green);
+      color: white;
+      border-radius: 22px;
+      padding: 20px;
+      margin-top: 18px;
+    }
+
+    .cart-summary-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .cart-summary-total {
+      font-size: 25px;
+      font-weight: 850;
+    }
+
+    .cart-summary button {
+      width: 100%;
+      border: 0;
+      border-radius: 15px;
+      background: white;
+      color: var(--green);
+      padding: 14px;
+      font-weight: 800;
+    }
+
+    /* FORMS */
+
+    .form-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 18px;
+      margin-top: 15px;
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 5px;
     }
 
     input,
     textarea,
     select {
       width: 100%;
+      border: 1px solid var(--border);
+      background: #fafcfb;
+      color: var(--text);
+      border-radius: 14px;
       padding: 13px;
-      border: 1px solid #ddd;
-      border-radius: 12px;
-      font-size: 16px;
-      margin: 6px 0 12px;
+      margin: 6px 0 14px;
+      outline: none;
     }
 
-    .qty {
+    input:focus,
+    textarea:focus,
+    select:focus {
+      border-color: var(--green);
+      background: white;
+    }
+
+    textarea {
+      min-height: 90px;
+      resize: vertical;
+    }
+
+    .form-actions {
       display: flex;
-      align-items: center;
       gap: 10px;
     }
 
-    .qty button {
-      padding: 7px 11px;
+    .form-actions button {
+      flex: 1;
     }
 
-    .hidden {
-      display: none;
-    }
-
-    .total {
-      font-size: 24px;
+    .secondary-btn {
+      border: 1px solid var(--border);
+      background: #f5f7f5;
+      color: var(--text);
+      border-radius: 14px;
+      padding: 13px;
       font-weight: 700;
-      margin: 15px 0;
     }
 
     .notice {
-      padding: 12px;
-      border-radius: 12px;
-      background: #eef8f1;
+      padding: 13px;
+      border-radius: 14px;
+      background: var(--green-light);
+      color: #145b37;
       margin-top: 12px;
+      line-height: 1.4;
     }
 
-    /* ADMIN */
+    /* PROFILE */
 
-    .admin-panel {
-      border: 2px solid #17814b;
+    .profile-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 20px;
+      margin-bottom: 14px;
     }
 
-    .admin-title {
-      color: #17814b;
-      margin-top: 0;
+    .profile-avatar {
+      width: 58px;
+      height: 58px;
+      border-radius: 18px;
+      background: var(--green-light);
+      color: var(--green);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 25px;
+      font-weight: 900;
+      margin-bottom: 12px;
     }
+
+    .profile-name {
+      font-size: 21px;
+      font-weight: 850;
+    }
+
+    .profile-sub {
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .admin-box {
+      background: #f4faf6;
+      border: 1px solid #d8eddf;
+      border-radius: 20px;
+      padding: 16px;
+      margin-top: 14px;
+    }
+
+    .admin-box h3 {
+      margin: 0 0 5px;
+    }
+
+    .admin-box p {
+      color: var(--muted);
+      font-size: 14px;
+      margin: 0 0 14px;
+    }
+
+    /* ADMIN ORDERS */
 
     .admin-order {
-      background: #f8faf8;
-      border-radius: 16px;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 18px;
       padding: 16px;
-      margin: 14px 0;
-      border: 1px solid #e3e8e3;
+      margin: 12px 0;
     }
 
     .admin-order h3 {
       margin: 0;
+      font-size: 18px;
     }
 
-    .admin-order hr {
-      border: 0;
-      border-top: 1px solid #ddd;
-      margin: 14px 0;
-    }
-
-    .status {
-      background: #e8f5ec;
-      color: #167846;
-      padding: 7px 10px;
+    .order-status {
+      background: var(--green-light);
+      color: var(--green);
       border-radius: 10px;
+      padding: 6px 9px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .order-meta {
+      color: var(--muted);
       font-size: 13px;
-      font-weight: 700;
+      margin-top: 4px;
     }
 
-    .order-items {
-      margin: 8px 0 14px;
-    }
-
-    .order-item {
+    .order-line {
       padding: 5px 0;
+      font-size: 14px;
     }
 
     .order-total {
       font-size: 20px;
-      font-weight: 700;
-      margin: 14px 0;
+      font-weight: 850;
+      margin: 12px 0;
     }
 
-    .refresh {
-      width: 100%;
-      margin-bottom: 10px;
+    .order-separator {
+      height: 1px;
+      background: var(--border);
+      margin: 13px 0;
+    }
+
+    /* BOTTOM NAV */
+
+    .bottom-nav {
+      position: fixed;
+      left: 50%;
+      bottom: 0;
+      transform: translateX(-50%);
+      width: min(760px, 100%);
+      z-index: 100;
+      padding:
+        8px
+        12px
+        calc(8px + env(safe-area-inset-bottom));
+      background: rgba(255,255,255,.94);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(231,236,233,.9);
+    }
+
+    .nav-inner {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 5px;
+    }
+
+    .nav-btn {
+      position: relative;
+      border: 0;
+      background: transparent;
+      color: #89938d;
+      border-radius: 15px;
+      padding: 7px 4px;
+      min-height: 58px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .nav-icon {
+      display: block;
+      font-size: 22px;
+      line-height: 24px;
+      margin-bottom: 2px;
+    }
+
+    .nav-btn.active {
+      background: var(--green-light);
+      color: var(--green);
+    }
+
+    .cart-badge {
+      position: absolute;
+      top: 3px;
+      right: 23%;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      border-radius: 9px;
+      background: var(--green);
+      color: white;
+      font-size: 10px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .cart-badge.visible {
+      display: flex;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .page-heading {
+      margin-bottom: 20px;
+    }
+
+    .page-heading h2 {
+      margin: 0 0 5px;
+      font-size: 28px;
+      letter-spacing: -.8px;
+    }
+
+    .page-heading p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    @media (min-width: 600px) {
+      .content {
+        padding-left: 22px;
+        padding-right: 22px;
+      }
     }
   </style>
 </head>
 
 <body>
 
-<div class="wrap">
+<div class="app">
 
-  <h1>Greenleaf</h1>
+  <!-- TOP -->
 
-  <div
-    class="sub"
-    id="catalogStatus"
-  >
-    Загрузка каталога…
-  </div>
+  <header class="topbar">
+    <div class="topbar-inner">
 
-
-  <!-- КАТАЛОГ -->
-
-  <div id="catalog"></div>
-
-
-  <!-- КОРЗИНА -->
-
-  <div class="panel">
-
-    <div class="row">
-      <h2>Корзина</h2>
-
-      <span id="cartCount">
-        0
-      </span>
-    </div>
-
-    <div id="cart"></div>
-
-    <div
-      class="total"
-      id="cartTotal"
-    >
-      Итого: 0 TMT
-    </div>
-
-    <button
-      id="checkoutBtn"
-      onclick="showCheckout()"
-    >
-      Оформить заказ
-    </button>
-
-  </div>
-
-
-  <!-- ОФОРМЛЕНИЕ -->
-
-  <div
-    class="panel hidden"
-    id="checkout"
-  >
-
-    <h2>
-      Оформление заказа
-    </h2>
-
-    <label>
-      Имя
-
-      <input
-        id="name"
-        placeholder="Например, Alina"
-      >
-    </label>
-
-    <label>
-      Телефон
-
-      <input
-        id="phone"
-        placeholder="+993 ..."
-      >
-    </label>
-
-    <label>
-      Город
-
-      <input
-        id="city"
-        placeholder="Туркменбаши"
-      >
-    </label>
-
-    <label>
-      Способ получения
-
-      <select id="method">
-
-        <option value="Самовывоз">
-          Самовывоз
-        </option>
-
-        <option value="Доставка">
-          Доставка
-        </option>
-
-      </select>
-    </label>
-
-    <label>
-      Адрес / пункт выдачи
-
-      <input
-        id="address"
-        placeholder="Адрес или название пункта"
-      >
-    </label>
-
-    <label>
-      Комментарий
-
-      <textarea
-        id="comment"
-        placeholder="Дополнительная информация"
-      ></textarea>
-    </label>
-
-
-    <div class="row">
+      <div class="brand">
+        <div class="brand-mark">🌿</div>
+        <span>Greenleaf</span>
+      </div>
 
       <button
-        class="secondary"
-        onclick="hideCheckout()"
+        class="language-btn"
+        id="languageBtn"
+        onclick="toggleLanguage()"
       >
-        Назад
-      </button>
-
-      <button
-        onclick="submitOrder()"
-      >
-        Отправить заказ
+        TM
       </button>
 
     </div>
+  </header>
 
 
-    <div id="orderResult"></div>
+  <main class="content">
 
-  </div>
+    <!-- HOME -->
+
+    <section
+      class="page active"
+      id="page-home"
+    >
+
+      <div class="hero">
+
+        <div
+          class="hero-label"
+          data-i18n="heroLabel"
+        >
+          GREENLEAF
+        </div>
+
+        <h1 data-i18n="heroTitle">
+          Добро пожаловать в Greenleaf
+        </h1>
+
+        <p data-i18n="heroText">
+          Выбирайте понравившиеся товары
+          и оформляйте заказ быстро и удобно.
+        </p>
+
+        <button
+          class="primary-btn"
+          onclick="openPage('catalog')"
+          data-i18n="viewCatalog"
+        >
+          Смотреть каталог
+        </button>
+
+      </div>
 
 
-  <!-- АДМИН-ПАНЕЛЬ -->
+      <div class="section-title">
 
-  <div
-    id="adminPanel"
-    class="panel admin-panel hidden"
-  >
+        <h2 data-i18n="popular">
+          Каталог
+        </h2>
 
-    <h2 class="admin-title">
-      🔐 Панель владельца
-    </h2>
+        <button
+          class="small-link"
+          onclick="openPage('catalog')"
+          data-i18n="allProducts"
+        >
+          Все товары
+        </button>
 
-    <div class="muted">
-      Здесь отображаются все заказы.
+      </div>
+
+      <div id="homeProducts"></div>
+
+    </section>
+
+
+    <!-- CATALOG -->
+
+    <section
+      class="page"
+      id="page-catalog"
+    >
+
+      <div class="page-heading">
+
+        <h2 data-i18n="catalog">
+          Каталог
+        </h2>
+
+        <p
+          id="catalogStatus"
+          data-i18n="loading"
+        >
+          Загрузка каталога…
+        </p>
+
+      </div>
+
+      <div id="catalog"></div>
+
+    </section>
+
+
+    <!-- CART -->
+
+    <section
+      class="page"
+      id="page-cart"
+    >
+
+      <div class="page-heading">
+
+        <h2 data-i18n="cart">
+          Корзина
+        </h2>
+
+        <p data-i18n="cartSubtitle">
+          Проверьте товары перед оформлением.
+        </p>
+
+      </div>
+
+      <div id="cart"></div>
+
+      <div
+        class="cart-summary"
+        id="cartSummary"
+      >
+
+        <div class="cart-summary-line">
+
+          <span data-i18n="total">
+            Итого
+          </span>
+
+          <span
+            class="cart-summary-total"
+            id="cartTotal"
+          >
+            0 TMT
+          </span>
+
+        </div>
+
+        <button
+          onclick="showCheckout()"
+          id="checkoutBtn"
+          data-i18n="checkout"
+        >
+          Оформить заказ
+        </button>
+
+      </div>
+
+
+      <!-- CHECKOUT -->
+
+      <div
+        class="form-card hidden"
+        id="checkout"
+      >
+
+        <div class="section-title">
+          <h2 data-i18n="order">
+            Оформление заказа
+          </h2>
+        </div>
+
+        <label data-i18n="name">
+          Имя
+        </label>
+
+        <input
+          id="name"
+          data-i18n-placeholder="namePlaceholder"
+          placeholder="Например, Alina"
+        >
+
+
+        <label data-i18n="phone">
+          Телефон
+        </label>
+
+        <input
+          id="phone"
+          placeholder="+993 ..."
+        >
+
+
+        <label data-i18n="city">
+          Город
+        </label>
+
+        <input
+          id="city"
+          data-i18n-placeholder="cityPlaceholder"
+          placeholder="Туркменбаши"
+        >
+
+
+        <label data-i18n="method">
+          Способ получения
+        </label>
+
+        <select id="method">
+
+          <option
+            value="Самовывоз"
+            data-i18n="pickup"
+          >
+            Самовывоз
+          </option>
+
+          <option
+            value="Доставка"
+            data-i18n="delivery"
+          >
+            Доставка
+          </option>
+
+        </select>
+
+
+        <label data-i18n="address">
+          Адрес / пункт выдачи
+        </label>
+
+        <input
+          id="address"
+          data-i18n-placeholder="addressPlaceholder"
+          placeholder="Адрес или название пункта"
+        >
+
+
+        <label data-i18n="comment">
+          Комментарий
+        </label>
+
+        <textarea
+          id="comment"
+          data-i18n-placeholder="commentPlaceholder"
+          placeholder="Дополнительная информация"
+        ></textarea>
+
+
+        <div class="form-actions">
+
+          <button
+            class="secondary-btn"
+            onclick="hideCheckout()"
+            data-i18n="back"
+          >
+            Назад
+          </button>
+
+          <button
+            class="primary-btn"
+            onclick="submitOrder()"
+            data-i18n="sendOrder"
+          >
+            Отправить заказ
+          </button>
+
+        </div>
+
+        <div id="orderResult"></div>
+
+      </div>
+
+    </section>
+
+
+    <!-- PROFILE -->
+
+    <section
+      class="page"
+      id="page-profile"
+    >
+
+      <div class="page-heading">
+
+        <h2 data-i18n="profile">
+          Профиль
+        </h2>
+
+        <p data-i18n="profileSubtitle">
+          Ваша информация в Greenleaf.
+        </p>
+
+      </div>
+
+
+      <div class="profile-card">
+
+        <div class="profile-avatar">
+          👤
+        </div>
+
+        <div
+          class="profile-name"
+          id="profileName"
+          data-i18n="guest"
+        >
+          Гость
+        </div>
+
+        <div
+          class="profile-sub"
+          id="profileUsername"
+        >
+        </div>
+
+      </div>
+
+
+      <!-- ADMIN ENTRY -->
+
+      <div
+        class="admin-box hidden"
+        id="adminEntry"
+      >
+
+        <h3 data-i18n="adminTitle">
+          Панель владельца
+        </h3>
+
+        <p data-i18n="adminDescription">
+          Управление заказами Greenleaf.
+        </p>
+
+        <button
+          class="primary-btn"
+          onclick="openAdminOrders()"
+          data-i18n="openAdmin"
+        >
+          Открыть панель
+        </button>
+
+      </div>
+
+
+      <!-- ADMIN ORDERS -->
+
+      <div
+        id="adminOrders"
+        class="hidden"
+      >
+
+        <div class="section-title">
+
+          <h2 data-i18n="orders">
+            Заказы
+          </h2>
+
+          <button
+            class="small-link"
+            onclick="loadOrders()"
+            data-i18n="refresh"
+          >
+            Обновить
+          </button>
+
+        </div>
+
+        <div id="orders"></div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <!-- BOTTOM NAV -->
+
+  <nav class="bottom-nav">
+
+    <div class="nav-inner">
+
+      <button
+        class="nav-btn active"
+        data-page="home"
+        onclick="openPage('home')"
+      >
+        <span class="nav-icon">⌂</span>
+        <span data-i18n="home">Главная</span>
+      </button>
+
+
+      <button
+        class="nav-btn"
+        data-page="catalog"
+        onclick="openPage('catalog')"
+      >
+        <span class="nav-icon">◫</span>
+        <span data-i18n="catalog">Каталог</span>
+      </button>
+
+
+      <button
+        class="nav-btn"
+        data-page="cart"
+        onclick="openPage('cart')"
+      >
+        <span class="nav-icon">🛍</span>
+
+        <span
+          class="cart-badge"
+          id="cartBadge"
+        >
+          0
+        </span>
+
+        <span data-i18n="cart">Корзина</span>
+      </button>
+
+
+      <button
+        class="nav-btn"
+        data-page="profile"
+        onclick="openPage('profile')"
+      >
+        <span class="nav-icon">♙</span>
+        <span data-i18n="profile">Профиль</span>
+      </button>
+
     </div>
 
-    <br>
-
-    <button
-      class="refresh"
-      onclick="loadOrders()"
-    >
-      Обновить заказы
-    </button>
-
-    <div id="orders"></div>
-
-  </div>
+  </nav>
 
 </div>
 
 
-<!-- Telegram Mini App API -->
-
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
-<!-- Наш JS -->
 
 <script src="/static/script.js"></script>
 
