@@ -9,720 +9,561 @@
 
   <title>Greenleaf</title>
 
+  <script src="https://telegram.org/js/telegram-web-app.js?64"></script>
+
   <style>
-    :root {
-      --green: #173f2c;
-      --green-2: #245b40;
-      --light-green: #edf4ef;
-      --text: #151815;
-      --muted: #777d79;
-      --line: #e5e8e5;
-      --bg: #f7f8f7;
-      --white: #ffffff;
-      --danger: #8f3434;
+    :root{
+      --green:#176b45;
+      --green-dark:#0e4d31;
+      --green-soft:#eaf4ee;
+      --bg:#f7f8f6;
+      --card:#ffffff;
+      --text:#151715;
+      --muted:#747a76;
+      --line:#e7eae7;
+      --danger:#9f3030;
     }
 
-    * {
-      box-sizing: border-box;
+    *{
+      box-sizing:border-box;
     }
 
-    html {
-      scroll-behavior: smooth;
+    html{
+      scroll-behavior:smooth;
     }
 
-    body {
-      margin: 0;
-      background: var(--bg);
-      color: var(--text);
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
       font-family:
         -apple-system,
         BlinkMacSystemFont,
         "Segoe UI",
         Arial,
         sans-serif;
+      padding-bottom:96px;
     }
 
     button,
     input,
     textarea,
-    select {
-      font: inherit;
+    select{
+      font:inherit;
     }
 
-    button {
-      cursor: pointer;
+    button{
+      cursor:pointer;
     }
 
-    .app {
-      max-width: 760px;
-      min-height: 100vh;
-      margin: 0 auto;
-      background: var(--bg);
+    .app{
+      width:100%;
+      max-width:760px;
+      margin:auto;
+      min-height:100vh;
     }
 
-    .top {
-      position: sticky;
-      top: 0;
-      z-index: 20;
-      background: rgba(247,248,247,.94);
-      backdrop-filter: blur(18px);
-      padding:
-        calc(14px + env(safe-area-inset-top))
-        18px
-        14px;
-      border-bottom: 1px solid rgba(0,0,0,.04);
+    .top{
+      padding:22px 20px 12px;
+      background:#fff;
+      border-bottom:1px solid var(--line);
+      position:sticky;
+      top:0;
+      z-index:20;
     }
 
-    .top-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
+    .brand{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
     }
 
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 11px;
+    .brand-name{
+      font-size:25px;
+      letter-spacing:4px;
+      font-weight:700;
+      color:var(--green-dark);
     }
 
-    .brand-mark {
-      width: 34px;
-      height: 34px;
-      border: 1.5px solid var(--green);
-      border-radius: 50%;
-      display: grid;
-      place-items: center;
-      color: var(--green);
-      font-weight: 700;
-      font-size: 14px;
-      letter-spacing: .05em;
+    .brand-sub{
+      font-size:11px;
+      color:var(--muted);
+      letter-spacing:2px;
+      text-transform:uppercase;
+      margin-top:3px;
     }
 
-    .brand-name {
-      font-size: 19px;
-      font-weight: 700;
-      letter-spacing: .12em;
+    .lang{
+      display:flex;
+      border:1px solid var(--line);
+      border-radius:999px;
+      padding:3px;
+      background:#fafbfa;
     }
 
-    .brand-sub {
-      font-size: 9px;
-      letter-spacing: .18em;
-      color: var(--muted);
-      margin-top: 2px;
+    .lang button{
+      border:0;
+      background:transparent;
+      color:var(--muted);
+      padding:7px 11px;
+      border-radius:999px;
+      font-size:12px;
     }
 
-    .lang {
-      display: flex;
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      padding: 3px;
-      background: white;
+    .lang button.active{
+      background:var(--green);
+      color:#fff;
     }
 
-    .lang button {
-      border: 0;
-      background: transparent;
-      color: var(--muted);
-      padding: 6px 9px;
-      border-radius: 999px;
-      font-size: 11px;
-      font-weight: 600;
+    .page{
+      display:none;
+      padding:22px 18px;
     }
 
-    .lang button.active {
-      background: var(--green);
-      color: white;
+    .page.active{
+      display:block;
     }
 
-    main {
-      padding: 18px 16px 110px;
+    .hero{
+      background:#fff;
+      border-radius:26px;
+      padding:28px 24px;
+      border:1px solid var(--line);
+      margin-bottom:18px;
     }
 
-    .page {
-      display: none;
+    .eyebrow{
+      color:var(--green);
+      text-transform:uppercase;
+      letter-spacing:2px;
+      font-size:11px;
+      font-weight:700;
     }
 
-    .page.active {
-      display: block;
+    .hero h1{
+      margin:10px 0 10px;
+      font-size:36px;
+      line-height:1.05;
+      letter-spacing:-1px;
     }
 
-    .hero {
-      background: var(--green);
-      color: white;
-      border-radius: 26px;
-      padding: 28px 22px;
-      margin-bottom: 18px;
+    .hero p{
+      color:var(--muted);
+      line-height:1.6;
+      margin:0;
     }
 
-    .hero-label {
-      font-size: 10px;
-      letter-spacing: .2em;
-      text-transform: uppercase;
-      opacity: .65;
-      margin-bottom: 13px;
+    .section-title{
+      font-size:21px;
+      margin:26px 2px 12px;
     }
 
-    .hero h1 {
-      margin: 0;
-      font-family: Georgia, serif;
-      font-size: 34px;
-      font-weight: 500;
-      line-height: 1.05;
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:22px;
+      overflow:hidden;
+      margin-bottom:14px;
     }
 
-    .hero p {
-      color: rgba(255,255,255,.72);
-      line-height: 1.55;
-      font-size: 14px;
-      margin: 13px 0 0;
-      max-width: 500px;
+    .product-image{
+      width:100%;
+      aspect-ratio:4/5;
+      object-fit:cover;
+      background:#eef1ee;
+      display:block;
     }
 
-    .section-head {
-      display: flex;
-      align-items: end;
-      justify-content: space-between;
-      gap: 12px;
-      margin: 24px 2px 12px;
+    .product-no-image{
+      width:100%;
+      aspect-ratio:4/5;
+      background:
+        linear-gradient(
+          135deg,
+          #f2f4f1,
+          #e7ece8
+        );
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color:#8a918c;
+      font-size:12px;
+      letter-spacing:2px;
+      text-transform:uppercase;
     }
 
-    .section-head h2 {
-      margin: 0;
-      font-family: Georgia, serif;
-      font-size: 23px;
-      font-weight: 500;
+    .product-body{
+      padding:18px;
     }
 
-    .section-head span {
-      color: var(--muted);
-      font-size: 12px;
+    .product-category{
+      color:var(--green);
+      font-size:11px;
+      letter-spacing:1.5px;
+      text-transform:uppercase;
+      margin-bottom:7px;
     }
 
-    .categories {
-      display: flex;
-      gap: 8px;
-      overflow-x: auto;
-      padding-bottom: 4px;
-      scrollbar-width: none;
+    .product-name{
+      font-size:20px;
+      font-weight:700;
+      margin-bottom:7px;
     }
 
-    .categories::-webkit-scrollbar {
-      display: none;
+    .product-description{
+      color:var(--muted);
+      line-height:1.5;
+      font-size:14px;
+      min-height:21px;
     }
 
-    .category {
-      flex: 0 0 auto;
-      border: 1px solid var(--line);
-      background: white;
-      color: var(--text);
-      padding: 10px 14px;
-      border-radius: 999px;
-      font-size: 12px;
+    .product-bottom{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-top:16px;
     }
 
-    .category.active {
-      background: var(--green);
-      color: white;
-      border-color: var(--green);
+    .price{
+      font-size:20px;
+      font-weight:700;
+      color:var(--green-dark);
+      white-space:nowrap;
     }
 
-    .products {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0,1fr));
-      gap: 12px;
+    .btn{
+      border:0;
+      border-radius:13px;
+      padding:12px 16px;
+      background:var(--green);
+      color:#fff;
+      font-weight:600;
     }
 
-    .product {
-      background: white;
-      border-radius: 20px;
-      overflow: hidden;
-      border: 1px solid rgba(0,0,0,.035);
+    .btn:hover{
+      background:var(--green-dark);
     }
 
-    .product-image {
-      aspect-ratio: 1 / 1.08;
-      background: #eef1ee;
-      overflow: hidden;
-      position: relative;
+    .btn.secondary{
+      background:#f0f2f0;
+      color:var(--text);
     }
 
-    .product-image img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
+    .btn.danger{
+      background:#f8eaea;
+      color:var(--danger);
     }
 
-    .product-placeholder {
-      width: 100%;
-      height: 100%;
-      display: grid;
-      place-items: center;
-      color: #9ba29d;
-      font-size: 11px;
-      letter-spacing: .12em;
-      text-transform: uppercase;
+    .btn.full{
+      width:100%;
     }
 
-    .product-body {
-      padding: 13px;
+    .empty{
+      text-align:center;
+      background:#fff;
+      border:1px dashed #d9ddd9;
+      border-radius:20px;
+      padding:30px 18px;
+      color:var(--muted);
     }
 
-    .product-category {
-      color: var(--muted);
-      font-size: 9px;
-      text-transform: uppercase;
-      letter-spacing: .12em;
-      margin-bottom: 6px;
+    .cart-item{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:16px;
+      margin-bottom:10px;
     }
 
-    .product-name {
-      font-family: Georgia, serif;
-      font-size: 18px;
-      margin-bottom: 5px;
+    .cart-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:14px;
     }
 
-    .product-description {
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.45;
-      min-height: 35px;
+    .qty{
+      display:flex;
+      align-items:center;
+      gap:9px;
     }
 
-    .product-bottom {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 7px;
-      margin-top: 12px;
+    .qty button{
+      border:0;
+      width:34px;
+      height:34px;
+      border-radius:10px;
+      background:#eef2ef;
+      color:var(--text);
     }
 
-    .product-price {
-      font-size: 14px;
-      font-weight: 700;
-      white-space: nowrap;
+    .checkout{
+      margin-top:18px;
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:22px;
+      padding:20px;
     }
 
-    .small-button {
-      border: 0;
-      background: var(--green);
-      color: white;
-      border-radius: 10px;
-      padding: 9px 11px;
-      font-size: 11px;
-    }
-
-    .rating {
-      color: var(--green);
-      font-size: 11px;
-      margin-top: 5px;
-    }
-
-    .panel {
-      background: white;
-      border-radius: 22px;
-      border: 1px solid rgba(0,0,0,.035);
-      padding: 18px;
-      margin-bottom: 14px;
-    }
-
-    .panel h2,
-    .panel h3 {
-      margin: 0 0 14px;
-      font-family: Georgia, serif;
-      font-weight: 500;
-    }
-
-    .muted {
-      color: var(--muted);
-    }
-
-    .empty {
-      text-align: center;
-      padding: 35px 18px;
-      color: var(--muted);
-      background: white;
-      border-radius: 20px;
-    }
-
-    .form-group {
-      margin-bottom: 12px;
-    }
-
-    label {
-      display: block;
-      font-size: 11px;
-      color: var(--muted);
-      margin-bottom: 6px;
+    label{
+      display:block;
+      font-size:13px;
+      color:#555b57;
+      margin-bottom:5px;
     }
 
     input,
     textarea,
-    select {
-      width: 100%;
-      border: 1px solid var(--line);
-      background: white;
-      border-radius: 12px;
-      padding: 12px;
-      outline: none;
-      color: var(--text);
-    }
-
-    textarea {
-      min-height: 95px;
-      resize: vertical;
+    select{
+      width:100%;
+      border:1px solid #dfe3df;
+      background:#fff;
+      border-radius:12px;
+      padding:13px;
+      outline:none;
+      margin:6px 0 13px;
     }
 
     input:focus,
     textarea:focus,
-    select:focus {
-      border-color: var(--green);
+    select:focus{
+      border-color:var(--green);
     }
 
-    .primary {
-      width: 100%;
-      border: 0;
-      border-radius: 13px;
-      padding: 13px;
-      background: var(--green);
-      color: white;
-      font-weight: 600;
+    textarea{
+      min-height:90px;
+      resize:vertical;
     }
 
-    .secondary {
-      border: 1px solid var(--line);
-      border-radius: 13px;
-      padding: 12px 14px;
-      background: white;
-      color: var(--text);
+    .notice{
+      background:var(--green-soft);
+      color:var(--green-dark);
+      border-radius:14px;
+      padding:13px;
+      margin-top:12px;
+      line-height:1.45;
     }
 
-    .danger {
-      border: 0;
-      border-radius: 11px;
-      padding: 9px 11px;
-      background: #f8eded;
-      color: var(--danger);
+    .profile-card{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:22px;
+      padding:20px;
+      margin-bottom:14px;
     }
 
-    .row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
+    .admin-badge{
+      display:inline-block;
+      background:var(--green-soft);
+      color:var(--green-dark);
+      padding:7px 10px;
+      border-radius:999px;
+      font-size:12px;
+      margin-top:8px;
     }
 
-    .cart-item {
-      padding: 14px 0;
-      border-bottom: 1px solid var(--line);
+    .admin-panel{
+      display:none;
     }
 
-    .cart-item:last-child {
-      border-bottom: 0;
+    .admin-panel.visible{
+      display:block;
     }
 
-    .qty {
-      display: flex;
-      align-items: center;
-      gap: 8px;
+    .admin-tabs{
+      display:flex;
+      gap:8px;
+      overflow:auto;
+      margin:15px 0;
     }
 
-    .qty button {
-      width: 29px;
-      height: 29px;
-      border: 1px solid var(--line);
-      background: white;
-      border-radius: 9px;
+    .admin-tabs button{
+      white-space:nowrap;
+      border:1px solid var(--line);
+      background:#fff;
+      padding:10px 14px;
+      border-radius:999px;
     }
 
-    .total {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 15px;
-      padding-top: 15px;
-      border-top: 1px solid var(--line);
-      font-size: 18px;
-      font-weight: 700;
+    .admin-tabs button.active{
+      background:var(--green);
+      color:#fff;
+      border-color:var(--green);
     }
 
-    .bottom-nav {
-      position: fixed;
-      z-index: 50;
-      left: 50%;
-      bottom: 0;
-      transform: translateX(-50%);
-      width: min(760px, 100%);
+    .admin-box{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:20px;
+      padding:18px;
+      margin-bottom:14px;
+    }
+
+    .admin-product{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      padding:12px 0;
+      border-bottom:1px solid var(--line);
+    }
+
+    .admin-product:last-child{
+      border-bottom:0;
+    }
+
+    .admin-thumb{
+      width:60px;
+      height:70px;
+      border-radius:10px;
+      object-fit:cover;
+      background:#eef1ee;
+      flex:none;
+    }
+
+    .admin-actions{
+      margin-left:auto;
+      display:flex;
+      gap:6px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
+    .admin-actions button{
+      border:0;
+      border-radius:9px;
+      padding:8px 10px;
+      background:#f0f2f0;
+      font-size:12px;
+    }
+
+    .order{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:20px;
+      padding:18px;
+      margin-bottom:12px;
+    }
+
+    .order-top{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom:12px;
+    }
+
+    .order-id{
+      font-weight:700;
+      color:var(--green-dark);
+    }
+
+    .status{
+      padding:6px 9px;
+      border-radius:999px;
+      background:#eef2ef;
+      font-size:11px;
+    }
+
+    .order-items{
+      color:#555b57;
+      line-height:1.6;
+      font-size:14px;
+      margin:10px 0;
+    }
+
+    .bottom-nav{
+      position:fixed;
+      left:50%;
+      bottom:0;
+      transform:translateX(-50%);
+      width:min(760px,100%);
+      background:rgba(255,255,255,.96);
+      backdrop-filter:blur(18px);
+      border-top:1px solid var(--line);
       padding:
-        9px 10px
-        calc(9px + env(safe-area-inset-bottom));
-      background: rgba(255,255,255,.94);
-      backdrop-filter: blur(20px);
-      border-top: 1px solid var(--line);
-      display: grid;
-      grid-template-columns: repeat(4,1fr);
+        8px
+        8px
+        calc(8px + env(safe-area-inset-bottom));
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      z-index:50;
     }
 
-    .nav-btn {
-      border: 0;
-      background: transparent;
-      color: var(--muted);
-      font-size: 10px;
-      padding: 7px 3px;
+    .nav-btn{
+      border:0;
+      background:transparent;
+      color:#7b817d;
+      padding:8px 4px;
+      border-radius:13px;
+      font-size:11px;
     }
 
-    .nav-btn.active {
-      color: var(--green);
-      font-weight: 700;
+    .nav-btn.active{
+      color:var(--green-dark);
+      background:var(--green-soft);
+      font-weight:700;
     }
 
-    .nav-icon {
-      display: block;
-      font-size: 16px;
-      margin-bottom: 3px;
-      line-height: 1;
+    .hidden{
+      display:none !important;
     }
 
-    .badge {
-      display: inline-flex;
-      min-width: 18px;
-      height: 18px;
-      align-items: center;
-      justify-content: center;
-      border-radius: 999px;
-      background: var(--green);
-      color: white;
-      font-size: 9px;
-      padding: 0 5px;
-      margin-left: 3px;
+    .modal{
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,.45);
+      z-index:100;
+      display:none;
+      align-items:flex-end;
     }
 
-    .admin-tabs,
-    .order-tabs {
-      display: flex;
-      gap: 7px;
-      margin-bottom: 13px;
-      overflow-x: auto;
+    .modal.visible{
+      display:flex;
     }
 
-    .tab {
-      flex: 0 0 auto;
-      border: 1px solid var(--line);
-      background: white;
-      border-radius: 999px;
-      padding: 9px 12px;
-      font-size: 11px;
+    .modal-card{
+      width:100%;
+      max-width:760px;
+      margin:auto;
+      background:#fff;
+      border-radius:26px 26px 0 0;
+      max-height:90vh;
+      overflow:auto;
+      padding:20px;
     }
 
-    .tab.active {
-      background: var(--green);
-      color: white;
-      border-color: var(--green);
+    .modal-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:15px;
     }
 
-    .order {
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      padding: 14px;
-      margin-bottom: 10px;
+    .close{
+      border:0;
+      background:#f0f2f0;
+      width:38px;
+      height:38px;
+      border-radius:50%;
     }
 
-    .order-number {
-      font-weight: 700;
+    .file-note{
+      color:var(--muted);
+      font-size:12px;
+      margin-top:-7px;
+      margin-bottom:14px;
     }
 
-    .order-meta {
-      color: var(--muted);
-      font-size: 11px;
-      margin-top: 4px;
-      line-height: 1.5;
-    }
-
-    .order-items {
-      margin: 12px 0;
-      padding-top: 12px;
-      border-top: 1px solid var(--line);
-      font-size: 12px;
-      line-height: 1.6;
-    }
-
-    .order-actions {
-      display: flex;
-      gap: 7px;
-    }
-
-    .order-actions select {
-      flex: 1;
-      padding: 9px;
-      font-size: 11px;
-    }
-
-    .admin-product {
-      display: flex;
-      gap: 10px;
-      padding: 12px 0;
-      border-bottom: 1px solid var(--line);
-    }
-
-    .admin-product:last-child {
-      border-bottom: 0;
-    }
-
-    .admin-thumb {
-      width: 62px;
-      height: 62px;
-      flex: 0 0 62px;
-      border-radius: 12px;
-      background: #eef1ee;
-      overflow: hidden;
-    }
-
-    .admin-thumb img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .admin-product-main {
-      min-width: 0;
-      flex: 1;
-    }
-
-    .admin-product-name {
-      font-weight: 600;
-    }
-
-    .admin-product-price {
-      color: var(--muted);
-      font-size: 11px;
-      margin-top: 4px;
-    }
-
-    .admin-product-actions {
-      display: flex;
-      gap: 5px;
-      margin-top: 8px;
-    }
-
-    .review {
-      padding: 13px 0;
-      border-bottom: 1px solid var(--line);
-    }
-
-    .review:last-child {
-      border-bottom: 0;
-    }
-
-    .review-author {
-      font-weight: 600;
-      font-size: 13px;
-    }
-
-    .review-stars {
-      color: var(--green);
-      letter-spacing: .08em;
-      font-size: 11px;
-      margin-top: 4px;
-    }
-
-    .review-text {
-      font-size: 12px;
-      color: var(--muted);
-      line-height: 1.5;
-      margin-top: 7px;
-    }
-
-    .file-label {
-      display: block;
-      border: 1px dashed #cbd2cc;
-      border-radius: 14px;
-      padding: 18px;
-      text-align: center;
-      color: var(--muted);
-      background: #fafbfa;
-    }
-
-    .file-label input {
-      display: none;
-    }
-
-    .hidden {
-      display: none !important;
-    }
-
-    .modal {
-      position: fixed;
-      z-index: 100;
-      inset: 0;
-      background: rgba(0,0,0,.45);
-      display: none;
-      align-items: flex-end;
-      justify-content: center;
-    }
-
-    .modal.open {
-      display: flex;
-    }
-
-    .modal-card {
-      width: min(760px,100%);
-      max-height: 90vh;
-      overflow-y: auto;
-      background: white;
-      border-radius: 26px 26px 0 0;
-      padding: 18px;
-    }
-
-    .detail-image {
-      width: 100%;
-      aspect-ratio: 1 / .85;
-      border-radius: 20px;
-      overflow: hidden;
-      background: #eef1ee;
-      margin-bottom: 16px;
-    }
-
-    .detail-image img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .toast {
-      position: fixed;
-      z-index: 200;
-      left: 50%;
-      bottom: 90px;
-      transform: translateX(-50%);
-      background: var(--green);
-      color: white;
-      padding: 11px 15px;
-      border-radius: 999px;
-      font-size: 12px;
-      opacity: 0;
-      pointer-events: none;
-      transition: .2s;
-    }
-
-    .toast.show {
-      opacity: 1;
-    }
-
-    @media (max-width: 420px) {
-      .products {
-        gap: 9px;
+    @media (min-width:600px){
+      #catalog{
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:14px;
       }
 
-      .product-body {
-        padding: 11px;
-      }
-
-      .product-name {
-        font-size: 16px;
-      }
-
-      .hero h1 {
-        font-size: 30px;
+      #catalog .card{
+        margin:0;
       }
     }
   </style>
@@ -733,25 +574,18 @@
 <div class="app">
 
   <header class="top">
-    <div class="top-row">
+    <div class="brand">
 
-      <div class="brand">
-        <div class="brand-mark">G</div>
-
-        <div>
-          <div class="brand-name">
-            GREENLEAF
-          </div>
-
-          <div class="brand-sub">
-            TURKMENISTAN
-          </div>
+      <div>
+        <div class="brand-name">GREENLEAF</div>
+        <div class="brand-sub">
+          Turkmenistan
         </div>
       </div>
 
       <div class="lang">
         <button
-          id="langRU"
+          id="langRu"
           class="active"
           onclick="setLanguage('ru')"
         >
@@ -759,7 +593,7 @@
         </button>
 
         <button
-          id="langTM"
+          id="langTm"
           onclick="setLanguage('tm')"
         >
           TM
@@ -770,562 +604,579 @@
   </header>
 
 
-  <main>
+  <!-- HOME -->
 
-    <!-- HOME -->
+  <section
+    class="page active"
+    id="pageHome"
+  >
 
-    <section
-      class="page active"
-      id="page-home"
+    <div class="hero">
+      <div
+        class="eyebrow"
+        data-ru="Greenleaf"
+        data-tm="Greenleaf"
+      >
+        Greenleaf
+      </div>
+
+      <h1
+        data-ru="Красота в деталях."
+        data-tm="Gözellik jikme-jikliklerde."
+      >
+        Красота в деталях.
+      </h1>
+
+      <p
+        data-ru="Выберите подходящий товар из актуального каталога Greenleaf."
+        data-tm="Greenleaf katalogyndan özüňize laýyk önümi saýlaň."
+      >
+        Выберите подходящий товар из актуального каталога Greenleaf.
+      </p>
+    </div>
+
+    <h2
+      class="section-title"
+      data-ru="Избранное"
+      data-tm="Saýlananlar"
+    >
+      Избранное
+    </h2>
+
+    <div id="homeProducts"></div>
+
+  </section>
+
+
+  <!-- CATALOG -->
+
+  <section
+    class="page"
+    id="pageCatalog"
+  >
+
+    <h2
+      class="section-title"
+      data-ru="Каталог"
+      data-tm="Katalog"
+    >
+      Каталог
+    </h2>
+
+    <div
+      class="muted"
+      id="catalogStatus"
+      style="margin-bottom:16px"
+    >
+      Загрузка...
+    </div>
+
+    <div id="catalog"></div>
+
+  </section>
+
+
+  <!-- CART -->
+
+  <section
+    class="page"
+    id="pageCart"
+  >
+
+    <h2
+      class="section-title"
+      data-ru="Корзина"
+      data-tm="Sebet"
+    >
+      Корзина
+    </h2>
+
+    <div id="cart"></div>
+
+    <div
+      class="total"
+      id="cartTotal"
+      style="
+        font-size:24px;
+        font-weight:700;
+        margin:18px 0;
+      "
+    >
+      Итого: 0 TMT
+    </div>
+
+    <button
+      class="btn full"
+      id="checkoutBtn"
+      onclick="showCheckout()"
+      disabled
+      data-ru="Оформить заказ"
+      data-tm="Sargyt bermek"
+    >
+      Оформить заказ
+    </button>
+
+    <div
+      class="checkout hidden"
+      id="checkout"
     >
 
-      <div class="hero">
+      <h3
+        data-ru="Данные заказа"
+        data-tm="Sargyt maglumatlary"
+      >
+        Данные заказа
+      </h3>
 
-        <div class="hero-label">
-          Greenleaf
-        </div>
+      <label
+        data-ru="Имя"
+        data-tm="Adyňyz"
+      >
+        Имя
+      </label>
 
-        <h1>
-          Эстетика,<br>
-          которую хочется носить.
-        </h1>
-
-        <p>
-          Избранные модели Greenleaf
-          с оформлением заказа прямо
-          в приложении.
-        </p>
-
-      </div>
-
-      <div class="section-head">
-        <h2>Избранное</h2>
-        <span id="homeCount"></span>
-      </div>
-
-      <div id="homeProducts"></div>
-
-    </section>
-
-
-    <!-- CATALOG -->
-
-    <section
-      class="page"
-      id="page-catalog"
-    >
-
-      <div class="section-head">
-        <h2>Каталог</h2>
-        <span id="catalogCount"></span>
-      </div>
-
-      <div
-        class="categories"
-        id="categories"
-      ></div>
-
-      <div
-        class="products"
-        id="catalogProducts"
-      ></div>
-
-    </section>
-
-
-    <!-- CART -->
-
-    <section
-      class="page"
-      id="page-cart"
-    >
-
-      <div class="section-head">
-        <h2>Корзина</h2>
-        <span id="cartHeaderCount"></span>
-      </div>
-
-      <div
-        class="panel"
-        id="cartPanel"
-      ></div>
-
-      <div
-        class="panel hidden"
-        id="checkoutPanel"
+      <input
+        id="name"
+        placeholder="Например, Alina"
       >
 
-        <h2>
-          Оформление заказа
-        </h2>
+      <label
+        data-ru="Телефон"
+        data-tm="Telefon"
+      >
+        Телефон
+      </label>
 
-        <div class="form-group">
-          <label>Имя</label>
-          <input
-            id="name"
-            placeholder="Ваше имя"
-          >
-        </div>
+      <input
+        id="phone"
+        placeholder="+993 ..."
+      >
 
-        <div class="form-group">
-          <label>Телефон</label>
-          <input
-            id="phone"
-            placeholder="+993 ..."
-          >
-        </div>
+      <label
+        data-ru="Город"
+        data-tm="Şäher"
+      >
+        Город
+      </label>
 
-        <div class="form-group">
-          <label>Город</label>
-          <input
-            id="city"
-            placeholder="Туркменбаши"
-          >
-        </div>
+      <input
+        id="city"
+        placeholder="Туркменбаши"
+      >
 
-        <div class="form-group">
-          <label>
-            Способ получения
-          </label>
+      <label
+        data-ru="Способ получения"
+        data-tm="Almagyň görnüşi"
+      >
+        Способ получения
+      </label>
 
-          <select id="method">
-            <option value="Самовывоз">
-              Самовывоз
-            </option>
+      <select id="method">
+        <option
+          value="Самовывоз"
+          data-ru="Самовывоз"
+          data-tm="Özüm alyp gitmek"
+        >
+          Самовывоз
+        </option>
 
-            <option value="Доставка">
-              Доставка
-            </option>
-          </select>
-        </div>
+        <option
+          value="Доставка"
+          data-ru="Доставка"
+          data-tm="Eltip bermek"
+        >
+          Доставка
+        </option>
+      </select>
 
-        <div class="form-group">
-          <label>
-            Адрес / пункт выдачи
-          </label>
+      <label
+        data-ru="Адрес / пункт выдачи"
+        data-tm="Salgysy / beriş nokady"
+      >
+        Адрес / пункт выдачи
+      </label>
 
-          <input
-            id="address"
-            placeholder="Адрес или пункт"
-          >
-        </div>
+      <input
+        id="address"
+        placeholder="Адрес или пункт"
+      >
 
-        <div class="form-group">
-          <label>Комментарий</label>
+      <label
+        data-ru="Комментарий"
+        data-tm="Bellik"
+      >
+        Комментарий
+      </label>
 
-          <textarea
-            id="comment"
-            placeholder="Дополнительная информация"
-          ></textarea>
-        </div>
+      <textarea
+        id="comment"
+        placeholder="Дополнительная информация"
+      ></textarea>
+
+      <div style="
+        display:flex;
+        gap:8px;
+      ">
 
         <button
-          class="primary"
+          class="btn secondary"
+          onclick="hideCheckout()"
+          data-ru="Назад"
+          data-tm="Yza"
+        >
+          Назад
+        </button>
+
+        <button
+          class="btn"
           onclick="submitOrder()"
+          data-ru="Отправить заказ"
+          data-tm="Sargydy ugrat"
         >
           Отправить заказ
         </button>
 
-        <div
-          id="orderResult"
-          style="margin-top:12px"
-        ></div>
-
       </div>
 
-    </section>
+      <div id="orderResult"></div>
+
+    </div>
+
+  </section>
 
 
-    <!-- PROFILE -->
+  <!-- PROFILE -->
 
-    <section
-      class="page"
-      id="page-profile"
+  <section
+    class="page"
+    id="pageProfile"
+  >
+
+    <h2
+      class="section-title"
+      data-ru="Профиль"
+      data-tm="Profil"
+    >
+      Профиль
+    </h2>
+
+    <div class="profile-card">
+
+      <div
+        id="profileName"
+        style="
+          font-size:20px;
+          font-weight:700;
+        "
+      >
+        Гость
+      </div>
+
+      <div
+        id="profileStatus"
+        style="
+          color:#747a76;
+          margin-top:7px;
+          line-height:1.5;
+        "
+      >
+        Обычный пользователь
+      </div>
+
+      <div
+        id="adminBadge"
+        class="admin-badge hidden"
+      >
+        Владелец Greenleaf
+      </div>
+
+    </div>
+
+
+    <div
+      class="admin-panel"
+      id="adminPanel"
     >
 
-      <div class="hero">
-
-        <div class="hero-label">
-          Greenleaf
-        </div>
-
-        <h1>
-          Профиль
-        </h1>
-
-        <p>
-          Управление приложением
-          доступно владельцу магазина.
-        </p>
-
-      </div>
-
-      <div
-        class="panel"
-        id="profileInfo"
+      <h2
+        class="section-title"
+        data-ru="Панель владельца"
+        data-tm="Eýesiniň paneli"
       >
-        <h2>
-          Ваш профиль
-        </h2>
+        Панель владельца
+      </h2>
 
-        <div class="muted">
-          Telegram Web App
-        </div>
+      <div class="admin-tabs">
+
+        <button
+          id="ordersTab"
+          class="active"
+          onclick="showAdminTab('orders')"
+          data-ru="Заказы"
+          data-tm="Sargytlar"
+        >
+          Заказы
+        </button>
+
+        <button
+          id="productsTab"
+          onclick="showAdminTab('products')"
+          data-ru="Товары"
+          data-tm="Önümler"
+        >
+          Товары
+        </button>
+
       </div>
 
+
+      <!-- ORDERS ADMIN -->
+
+      <div id="adminOrders">
+
+        <div style="
+          display:flex;
+          gap:8px;
+          margin-bottom:12px;
+        ">
+
+          <button
+            class="btn"
+            onclick="loadOrders('active')"
+            data-ru="Активные"
+            data-tm="Işjeň"
+          >
+            Активные
+          </button>
+
+          <button
+            class="btn secondary"
+            onclick="loadOrders('archive')"
+            data-ru="Архив"
+            data-tm="Arhiw"
+          >
+            Архив
+          </button>
+
+        </div>
+
+        <div id="ordersList"></div>
+
+      </div>
+
+
+      <!-- PRODUCTS ADMIN -->
+
       <div
-        id="adminPanel"
+        id="adminProducts"
         class="hidden"
       >
 
-        <div class="section-head">
-          <h2>Администрирование</h2>
-        </div>
+        <div class="admin-box">
 
-        <div class="admin-tabs">
-
-          <button
-            class="tab active"
-            id="adminOrdersTab"
-            onclick="showAdminSection('orders')"
+          <h3
+            id="productFormTitle"
+            data-ru="Добавить товар"
+            data-tm="Önüm goş"
           >
-            Заказы
-          </button>
+            Добавить товар
+          </h3>
 
-          <button
-            class="tab"
-            id="adminProductsTab"
-            onclick="showAdminSection('products')"
+          <input
+            type="hidden"
+            id="editingProductId"
           >
-            Товары
-          </button>
 
-          <button
-            class="tab"
-            id="adminReviewsTab"
-            onclick="showAdminSection('reviews')"
+          <label
+            data-ru="Название"
+            data-tm="Ady"
           >
-            Отзывы
-          </button>
+            Название
+          </label>
 
-        </div>
+          <input
+            id="productName"
+            placeholder="Название товара"
+          >
 
+          <label
+            data-ru="Категория"
+            data-tm="Kategoriýa"
+          >
+            Категория
+          </label>
 
-        <!-- ADMIN ORDERS -->
+          <input
+            id="productCategory"
+            placeholder="Например, уход"
+          >
 
-        <div
-          id="adminOrdersSection"
-        >
+          <label
+            data-ru="Цена"
+            data-tm="Bahasy"
+          >
+            Цена
+          </label>
 
-          <div class="order-tabs">
+          <input
+            id="productPrice"
+            type="number"
+            min="0"
+            step="0.01"
+            placeholder="600"
+          >
 
-            <button
-              class="tab active"
-              id="activeOrdersTab"
-              onclick="loadOrders('active')"
-            >
-              Активные
-            </button>
+          <label
+            data-ru="Описание"
+            data-tm="Düşündiriş"
+          >
+            Описание
+          </label>
 
-            <button
-              class="tab"
-              id="archiveOrdersTab"
-              onclick="loadOrders('archive')"
-            >
-              Архив
-            </button>
+          <textarea
+            id="productDescription"
+            placeholder="Описание товара"
+          ></textarea>
 
+          <label
+            data-ru="Фотография"
+            data-tm="Surat"
+          >
+            Фотография
+          </label>
+
+          <input
+            id="productImage"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+          >
+
+          <div
+            class="file-note"
+            data-ru="Фото можно выбрать прямо из галереи телефона."
+            data-tm="Suraty göni telefon galereýasyndan saýlap bilersiňiz."
+          >
+            Фото можно выбрать прямо из галереи телефона.
           </div>
 
-          <div id="ordersList"></div>
-
-        </div>
-
-
-        <!-- ADMIN PRODUCTS -->
-
-        <div
-          id="adminProductsSection"
-          class="hidden"
-        >
-
-          <div class="panel">
-
-            <h3 id="productFormTitle">
-              Новый товар
-            </h3>
-
-            <input
-              type="hidden"
-              id="editProductId"
-            >
-
-            <div class="form-group">
-              <label>Название</label>
-
-              <input
-                id="productName"
-                placeholder="Название товара"
-              >
-            </div>
-
-            <div class="form-group">
-              <label>Категория</label>
-
-              <input
-                id="productCategory"
-                placeholder="Например: Верхняя одежда"
-              >
-            </div>
-
-            <div class="form-group">
-              <label>Цена</label>
-
-              <input
-                id="productPrice"
-                type="number"
-                min="0"
-                step="1"
-                placeholder="Цена в TMT"
-              >
-            </div>
-
-            <div class="form-group">
-              <label>Описание</label>
-
-              <textarea
-                id="productDescription"
-                placeholder="Описание товара"
-              ></textarea>
-            </div>
-
-            <label class="file-label">
-              Выбрать фотографию
-
-              <input
-                id="productImage"
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-              >
-            </label>
-
-            <div style="height:10px"></div>
+          <div style="
+            display:flex;
+            gap:8px;
+          ">
 
             <button
-              class="primary"
+              class="btn"
               onclick="saveProduct()"
+              data-ru="Сохранить"
+              data-tm="Ýatda sakla"
             >
-              Сохранить товар
+              Сохранить
             </button>
 
-            <div style="height:8px"></div>
-
             <button
-              class="secondary"
-              style="width:100%"
+              class="btn secondary"
               onclick="resetProductForm()"
+              data-ru="Очистить"
+              data-tm="Arassala"
             >
-              Очистить форму
-            </button>
-
-            <div
-              id="productFormResult"
-              style="margin-top:10px"
-            ></div>
-
-          </div>
-
-          <div
-            class="panel"
-            id="adminProductsList"
-          ></div>
-
-        </div>
-
-
-        <!-- ADMIN REVIEWS -->
-
-        <div
-          id="adminReviewsSection"
-          class="hidden"
-        >
-
-          <div class="panel">
-
-            <h3>
-              Добавить отзыв
-            </h3>
-
-            <div class="form-group">
-              <label>Товар</label>
-
-              <select
-                id="reviewProduct"
-              ></select>
-            </div>
-
-            <div class="form-group">
-              <label>Автор</label>
-
-              <input
-                id="reviewAuthor"
-                placeholder="Имя клиента"
-              >
-            </div>
-
-            <div class="form-group">
-              <label>Оценка</label>
-
-              <select id="reviewRating">
-                <option value="5">5</option>
-                <option value="4">4</option>
-                <option value="3">3</option>
-                <option value="2">2</option>
-                <option value="1">1</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label>Текст</label>
-
-              <textarea
-                id="reviewText"
-                placeholder="Текст отзыва"
-              ></textarea>
-            </div>
-
-            <button
-              class="primary"
-              onclick="saveReview()"
-            >
-              Добавить отзыв
+              Очистить
             </button>
 
           </div>
 
-          <div
-            class="panel"
-            id="adminReviewsList"
-          ></div>
+          <div id="productFormResult"></div>
 
         </div>
+
+        <div id="adminProductList"></div>
 
       </div>
 
-    </section>
+    </div>
 
-  </main>
-
-
-  <!-- BOTTOM NAV -->
-
-  <nav class="bottom-nav">
-
-    <button
-      class="nav-btn active"
-      data-page="home"
-      onclick="showPage('home')"
-    >
-      <span class="nav-icon">⌂</span>
-      Главная
-    </button>
-
-    <button
-      class="nav-btn"
-      data-page="catalog"
-      onclick="showPage('catalog')"
-    >
-      <span class="nav-icon">◫</span>
-      Каталог
-    </button>
-
-    <button
-      class="nav-btn"
-      data-page="cart"
-      onclick="showPage('cart')"
-    >
-      <span class="nav-icon">□</span>
-      Корзина
-      <span
-        id="navCartBadge"
-        class="badge hidden"
-      >
-        0
-      </span>
-    </button>
-
-    <button
-      class="nav-btn"
-      data-page="profile"
-      onclick="showPage('profile')"
-    >
-      <span class="nav-icon">○</span>
-      Профиль
-    </button>
-
-  </nav>
+  </section>
 
 </div>
 
 
-<!-- PRODUCT DETAIL -->
+<!-- PRODUCT MODAL -->
 
 <div
   class="modal"
   id="productModal"
-  onclick="closeModal(event)"
+  onclick="closeProductModal(event)"
 >
 
   <div class="modal-card">
 
-    <div class="row">
+    <div class="modal-head">
+
       <h2
         id="modalProductName"
-        style="font-family:Georgia,serif;font-weight:500"
+        style="margin:0"
       ></h2>
 
       <button
-        class="secondary"
+        class="close"
         onclick="closeProductModal()"
       >
-        Закрыть
+        ×
       </button>
+
     </div>
 
-    <div
-      class="detail-image"
-      id="modalProductImage"
-    ></div>
-
-    <div
-      id="modalProductInfo"
-    ></div>
-
-    <button
-      class="primary"
-      id="modalAddButton"
-      onclick="addModalProductToCart()"
-    >
-      Добавить в корзину
-    </button>
-
-    <div class="section-head">
-      <h2>Отзывы</h2>
-    </div>
-
-    <div
-      id="modalReviews"
-    ></div>
+    <div id="modalProductContent"></div>
 
   </div>
 
 </div>
 
 
-<div
-  id="toast"
-  class="toast"
-></div>
+<!-- BOTTOM NAV -->
+
+<nav class="bottom-nav">
+
+  <button
+    class="nav-btn active"
+    id="navHome"
+    onclick="showPage('home')"
+    data-ru="Главная"
+    data-tm="Baş sahypa"
+  >
+    Главная
+  </button>
+
+  <button
+    class="nav-btn"
+    id="navCatalog"
+    onclick="showPage('catalog')"
+    data-ru="Каталог"
+    data-tm="Katalog"
+  >
+    Каталог
+  </button>
+
+  <button
+    class="nav-btn"
+    id="navCart"
+    onclick="showPage('cart')"
+    data-ru="Корзина"
+    data-tm="Sebet"
+  >
+    Корзина
+  </button>
+
+  <button
+    class="nav-btn"
+    id="navProfile"
+    onclick="showPage('profile')"
+    data-ru="Профиль"
+    data-tm="Profil"
+  >
+    Профиль
+  </button>
+
+</nav>
 
 
 <script src="/static/script.js"></script>
