@@ -1,369 +1,73 @@
 let products = [];
 let cart = [];
+let currentCategory = "Все";
+let currentLanguage = "ru";
 let adminMode = false;
-
-let currentLanguage =
-  localStorage.getItem("greenleaf_language") || "ru";
-
-
-const TRANSLATIONS = {
-
-  ru: {
-    heroLabel: "GREENLEAF",
-    heroTitle: "Добро пожаловать в Greenleaf",
-    heroText:
-      "Выбирайте понравившиеся товары и оформляйте заказ быстро и удобно.",
-    viewCatalog: "Смотреть каталог",
-    popular: "Каталог",
-    allProducts: "Все товары",
-
-    home: "Главная",
-    catalog: "Каталог",
-    cart: "Корзина",
-    profile: "Профиль",
-
-    loading: "Загрузка каталога…",
-    cartSubtitle:
-      "Проверьте товары перед оформлением.",
-    total: "Итого",
-    checkout: "Оформить заказ",
-    order: "Оформление заказа",
-
-    name: "Имя",
-    namePlaceholder: "Например, Alina",
-    phone: "Телефон",
-    city: "Город",
-    cityPlaceholder: "Туркменбаши",
-    method: "Способ получения",
-    pickup: "Самовывоз",
-    delivery: "Доставка",
-    address: "Адрес / пункт выдачи",
-    addressPlaceholder:
-      "Адрес или название пункта",
-    comment: "Комментарий",
-    commentPlaceholder:
-      "Дополнительная информация",
-
-    back: "Назад",
-    sendOrder: "Отправить заказ",
-
-    profileSubtitle:
-      "Ваша информация в Greenleaf.",
-    guest: "Гость",
-
-    adminTitle: "Панель владельца",
-    adminDescription:
-      "Управление заказами Greenleaf.",
-    openAdmin: "Открыть панель",
-    orders: "Заказы",
-    refresh: "Обновить",
-
-    emptyCart: "Корзина пока пустая.",
-    emptyCartIcon: "🛍",
-
-    catalogLoaded: "Каталог загружен",
-    catalogError:
-      "Не удалось загрузить каталог",
-
-    enterName: "Укажи имя.",
-    sending: "Отправляем заказ…",
-    orderSuccess:
-      "Заказ успешно оформлен.",
-    orderSavedTelegram:
-      "Заказ сохранён, но Telegram пока не настроен:",
-    connectionError:
-      "Ошибка соединения с сервером.",
-    orderLoadError:
-      "Не удалось загрузить заказы.",
-    noOrders: "Заказов пока нет.",
-    accessDenied: "Доступ запрещён",
-
-    new: "Новый",
-    accepted: "Принят",
-    packing: "Собирается",
-    deliveryStatus: "Передан в доставку",
-    completed: "Завершён",
-    cancelled: "Отменён",
-
-    client: "Клиент",
-    phoneLabel: "Телефон",
-    cityLabel: "Город",
-    receiving: "Получение",
-    addressLabel: "Адрес / пункт",
-    products: "Товары",
-    commentLabel: "Комментарий",
-    none: "нет",
-    notSpecified: "не указан"
-  },
+let currentAdminSection = "orders";
+let currentOrderView = "active";
+let editingProductId = null;
+let modalProductId = null;
 
 
-  tm: {
-    heroLabel: "GREENLEAF",
-    heroTitle: "Greenleaf-e hoş geldiňiz",
-    heroText:
-      "Özüňize göwnüňizden turan harytlary saýlaň we sargydyňyzy çalt hem amatly resmileşdiriň.",
-    viewCatalog: "Katalogy gör",
-    popular: "Katalog",
-    allProducts: "Ähli harytlar",
-
-    home: "Baş sahypa",
-    catalog: "Katalog",
-    cart: "Sebet",
-    profile: "Profil",
-
-    loading: "Katalog ýüklenýär…",
-    cartSubtitle:
-      "Resmileşdirmezden öň harytlaryňyzy barlaň.",
-    total: "Jemi",
-    checkout: "Sargydy resmileşdirmek",
-    order: "Sargyt resmileşdirmek",
-
-    name: "Ady",
-    namePlaceholder: "Mysal üçin, Alina",
-    phone: "Telefon",
-    city: "Şäher",
-    cityPlaceholder: "Türkmenbaşy",
-    method: "Almak usuly",
-    pickup: "Özi alyp gitmek",
-    delivery: "Eltip bermek",
-    address: "Salgy / almak nokady",
-    addressPlaceholder:
-      "Salgysy ýa-da almak nokadynyň ady",
-    comment: "Teswir",
-    commentPlaceholder:
-      "Goşmaça maglumat",
-
-    back: "Yza",
-    sendOrder: "Sargydy ibermek",
-
-    profileSubtitle:
-      "Greenleaf-däki maglumatlaryňyz.",
-    guest: "Myhman",
-
-    adminTitle: "Eýe üçin dolandyryş paneli",
-    adminDescription:
-      "Greenleaf sargytlaryny dolandyryň.",
-    openAdmin: "Dolandyryş panelini aç",
-    orders: "Sargytlar",
-    refresh: "Täzele",
-
-    emptyCart: "Sebet häzirlikçe boş.",
-    emptyCartIcon: "🛍",
-
-    catalogLoaded: "Katalog ýüklenildi",
-    catalogError:
-      "Katalogy ýüklemek başartmady",
-
-    enterName: "Adyňyzy ýazyň.",
-    sending: "Sargyt iberilýär…",
-    orderSuccess:
-      "Sargyt üstünlikli kabul edildi.",
-    orderSavedTelegram:
-      "Sargyt saklandy, ýöne Telegram häzir sazlanmady:",
-    connectionError:
-      "Serwer bilen birikme ýalňyşlygy.",
-    orderLoadError:
-      "Sargytlary ýüklemek başartmady.",
-    noOrders: "Häzirlikçe sargyt ýok.",
-    accessDenied: "Giriş gadagan",
-
-    new: "Täze",
-    accepted: "Kabul edildi",
-    packing: "Taýýarlanylýar",
-    deliveryStatus: "Eltip bermäge berildi",
-    completed: "Tamamlandy",
-    cancelled: "Ýatyryldy",
-
-    client: "Müşderi",
-    phoneLabel: "Telefon",
-    cityLabel: "Şäher",
-    receiving: "Almak usuly",
-    addressLabel: "Salgy / nokat",
-    products: "Harytlar",
-    commentLabel: "Teswir",
-    none: "ýok",
-    notSpecified: "görkezilmedi"
-  }
-
-};
-
-
-const ORDER_STATUSES = {
-  new: "new",
-  accepted: "accepted",
-  packing: "packing",
-  delivery: "delivery",
-  completed: "completed",
-  cancelled: "cancelled"
-};
-
-
-/* =========================
-   LANGUAGE
-========================= */
-
-function t(key) {
-  return (
-    TRANSLATIONS[currentLanguage]?.[key]
-    ||
-    TRANSLATIONS.ru[key]
-    ||
-    key
-  );
-}
-
-
-function applyLanguage() {
-
-  document.documentElement.lang =
-    currentLanguage === "ru"
-      ? "ru"
-      : "tk";
-
-  document.querySelectorAll(
-    "[data-i18n]"
-  ).forEach(el => {
-    const key =
-      el.dataset.i18n;
-
-    el.textContent = t(key);
-  });
-
-
-  document.querySelectorAll(
-    "[data-i18n-placeholder]"
-  ).forEach(el => {
-
-    const key =
-      el.dataset.i18nPlaceholder;
-
-    el.placeholder = t(key);
-  });
-
-
-  const languageButton =
-    document.getElementById(
-      "languageBtn"
-    );
-
-  if (languageButton) {
-    languageButton.textContent =
-      currentLanguage === "ru"
-        ? "TM"
-        : "RU";
-  }
-
-
-  renderCatalog();
-  renderHomeProducts();
-  renderCart();
-
-  if (adminMode) {
-    loadOrders();
-  }
-}
-
-
-function toggleLanguage() {
-
-  currentLanguage =
-    currentLanguage === "ru"
-      ? "tm"
-      : "ru";
-
-  localStorage.setItem(
-    "greenleaf_language",
-    currentLanguage
-  );
-
-  applyLanguage();
-}
-
-
-/* =========================
+/* =========================================================
    TELEGRAM
-========================= */
+========================================================= */
 
-function telegramInitData() {
+const tg =
+  window.Telegram &&
+  window.Telegram.WebApp
+    ? window.Telegram.WebApp
+    : null;
 
-  if (
-    window.Telegram &&
-    window.Telegram.WebApp
-  ) {
-    return (
-      window.Telegram.WebApp.initData
-      || ""
-    );
-  }
-
-  return "";
+if (tg) {
+  tg.ready();
+  tg.expand();
 }
 
 
-function telegramUser() {
+/* =========================================================
+   INIT DATA
+========================================================= */
 
-  if (
-    window.Telegram &&
-    window.Telegram.WebApp &&
-    window.Telegram.WebApp
-      .initDataUnsafe &&
-    window.Telegram.WebApp
-      .initDataUnsafe.user
-  ) {
-    return window.Telegram.WebApp
-      .initDataUnsafe.user;
-  }
+async function init() {
+  await loadProducts();
+  await checkAdmin();
 
-  return null;
+  renderCart();
 }
 
-
-function adminHeaders() {
-
-  return {
-    "Content-Type":
-      "application/json",
-
-    "X-Telegram-Init-Data":
-      telegramInitData()
-  };
-}
+init().catch(() => {
+  showToast("Не удалось загрузить приложение");
+});
 
 
-/* =========================
+/* =========================================================
    NAVIGATION
-========================= */
+========================================================= */
 
-function openPage(page) {
+function showPage(page) {
+  document
+    .querySelectorAll(".page")
+    .forEach(el => {
+      el.classList.remove("active");
+    });
 
-  document.querySelectorAll(
-    ".page"
-  ).forEach(el => {
-    el.classList.remove("active");
-  });
-
-
-  const target =
-    document.getElementById(
-      `page-${page}`
-    );
+  const target = document.getElementById(
+    `page-${page}`
+  );
 
   if (target) {
     target.classList.add("active");
   }
 
-
-  document.querySelectorAll(
-    ".nav-btn"
-  ).forEach(btn => {
-
-    btn.classList.toggle(
-      "active",
-      btn.dataset.page === page
-    );
-
-  });
-
+  document
+    .querySelectorAll(".nav-btn")
+    .forEach(btn => {
+      btn.classList.toggle(
+        "active",
+        btn.dataset.page === page
+      );
+    });
 
   window.scrollTo({
     top: 0,
@@ -372,411 +76,657 @@ function openPage(page) {
 }
 
 
-/* =========================
-   CATALOG
-========================= */
+/* =========================================================
+   LANGUAGE
+========================================================= */
 
-async function loadCatalog() {
+function setLanguage(language) {
+  currentLanguage = language;
 
-  const res =
-    await fetch(
-      "/api/products"
+  document
+    .getElementById("langRU")
+    .classList.toggle(
+      "active",
+      language === "ru"
     );
 
-  const data =
-    await res.json();
+  document
+    .getElementById("langTM")
+    .classList.toggle(
+      "active",
+      language === "tm"
+    );
 
-  products =
-    data.products || [];
+  /*
+    Сейчас структура приложения остаётся
+    одинаковой. Переключатель уже готов
+    для следующего слоя локализации.
+  */
 
-  document.getElementById(
-    "catalogStatus"
-  ).textContent =
-    `${t("catalogLoaded")}: ${products.length}`;
-
-  renderCatalog();
-  renderHomeProducts();
-  renderCart();
+  showToast(
+    language === "ru"
+      ? "Русский язык"
+      : "Türkmen dili"
+  );
 }
 
 
-function money(value) {
+/* =========================================================
+   PRODUCTS
+========================================================= */
 
-  return (
-    Number(value)
-      .toLocaleString("ru-RU")
-    + " TMT"
+async function loadProducts() {
+  const response = await fetch(
+    "/api/products"
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      "Products request failed"
+    );
+  }
+
+  const data = await response.json();
+
+  products = data.products || [];
+
+  renderCategories();
+  renderCatalog();
+  renderHomeProducts();
+  renderReviewProductSelect();
+  renderAdminProducts();
+  renderAdminReviews();
+}
+
+
+function renderCategories() {
+  const root = document.getElementById(
+    "categories"
+  );
+
+  const categories = [
+    "Все",
+    ...new Set(
+      products
+        .map(p => p.category)
+        .filter(Boolean)
+    )
+  ];
+
+  if (
+    currentCategory !== "Все" &&
+    !categories.includes(
+      currentCategory
+    )
+  ) {
+    currentCategory = "Все";
+  }
+
+  root.innerHTML = categories
+    .map(category => `
+      <button
+        class="category ${
+          category === currentCategory
+            ? "active"
+            : ""
+        }"
+        onclick="selectCategory('${escapeJs(category)}')"
+      >
+        ${escapeHtml(category)}
+      </button>
+    `)
+    .join("");
+}
+
+
+function selectCategory(category) {
+  currentCategory = category;
+
+  renderCategories();
+  renderCatalog();
+}
+
+
+function filteredProducts() {
+  if (currentCategory === "Все") {
+    return products;
+  }
+
+  return products.filter(
+    product =>
+      product.category ===
+      currentCategory
   );
 }
 
 
 function renderCatalog() {
+  const root = document.getElementById(
+    "catalogProducts"
+  );
 
-  const root =
-    document.getElementById(
-      "catalog"
-    );
+  const list = filteredProducts();
 
-  if (!root) return;
+  document.getElementById(
+    "catalogCount"
+  ).textContent =
+    `${list.length} товар${plural(
+      list.length
+    )}`;
 
-
-  root.innerHTML =
-    products.map(p => `
-
-      <div class="product-card">
-
-        <div class="product-info">
-
-          <div class="product-name">
-            ${escapeHtml(p.name)}
-          </div>
-
-          <div class="product-description">
-            ${escapeHtml(
-              p.description || ""
-            )}
-          </div>
-
-          <div class="product-bottom">
-
-            <div class="product-price">
-              ${money(p.price)}
-            </div>
-
-            <button
-              class="add-btn"
-              onclick="addToCart(${p.id})"
-            >
-              +
-            </button>
-
-          </div>
-
-        </div>
-
+  if (!list.length) {
+    root.innerHTML = `
+      <div
+        class="empty"
+        style="grid-column:1/-1"
+      >
+        Каталог пока пуст.
       </div>
+    `;
 
-    `).join("");
+    return;
+  }
+
+  root.innerHTML = list
+    .map(renderProductCard)
+    .join("");
 }
 
 
 function renderHomeProducts() {
+  const root = document.getElementById(
+    "homeProducts"
+  );
 
-  const root =
-    document.getElementById(
-      "homeProducts"
-    );
+  const list = products.slice(0, 4);
 
-  if (!root) return;
+  document.getElementById(
+    "homeCount"
+  ).textContent =
+    `${products.length} товар${plural(
+      products.length
+    )}`;
+
+  if (!list.length) {
+    root.innerHTML = `
+      <div class="empty">
+        Каталог пока пуст.
+      </div>
+    `;
+
+    return;
+  }
+
+  root.innerHTML = `
+    <div class="products">
+      ${list.map(renderProductCard).join("")}
+    </div>
+  `;
+}
 
 
-  const preview =
-    products.slice(0, 3);
+function renderProductCard(product) {
+  const image = product.image_url
+    ? `
+      <img
+        src="${escapeHtml(product.image_url)}"
+        alt="${escapeHtml(product.name)}"
+        loading="lazy"
+      >
+    `
+    : `
+      <div class="product-placeholder">
+        GREENLEAF
+      </div>
+    `;
 
+  const rating =
+    product.review_count > 0
+      ? `
+        <div class="rating">
+          ${Number(product.rating).toFixed(1)}
+          · ${product.review_count} отзыв${plural(
+            product.review_count
+          )}
+        </div>
+      `
+      : "";
 
-  root.innerHTML =
-    preview.map(p => `
+  return `
+    <article
+      class="product"
+      onclick="openProduct(${product.id})"
+    >
 
-      <div class="product-card">
+      <div class="product-image">
+        ${image}
+      </div>
+
+      <div class="product-body">
+
+        <div class="product-category">
+          ${escapeHtml(
+            product.category ||
+            "Greenleaf"
+          )}
+        </div>
 
         <div class="product-name">
-          ${escapeHtml(p.name)}
+          ${escapeHtml(product.name)}
         </div>
 
         <div class="product-description">
           ${escapeHtml(
-            p.description || ""
+            product.description || ""
           )}
         </div>
+
+        ${rating}
 
         <div class="product-bottom">
 
           <div class="product-price">
-            ${money(p.price)}
+            ${money(product.price)}
           </div>
 
           <button
-            class="add-btn"
-            onclick="addToCart(${p.id})"
+            class="small-button"
+            onclick="event.stopPropagation();addToCart(${product.id})"
           >
-            +
+            В корзину
           </button>
 
         </div>
 
       </div>
 
-    `).join("");
+    </article>
+  `;
 }
 
 
-/* =========================
+/* =========================================================
+   PRODUCT MODAL
+========================================================= */
+
+function openProduct(productId) {
+  const product = products.find(
+    p => p.id === productId
+  );
+
+  if (!product) {
+    return;
+  }
+
+  modalProductId = productId;
+
+  document.getElementById(
+    "modalProductName"
+  ).textContent = product.name;
+
+  const imageRoot = document.getElementById(
+    "modalProductImage"
+  );
+
+  imageRoot.innerHTML =
+    product.image_url
+      ? `
+        <img
+          src="${escapeHtml(
+            product.image_url
+          )}"
+          alt="${escapeHtml(
+            product.name
+          )}"
+        >
+      `
+      : `
+        <div class="product-placeholder">
+          GREENLEAF
+        </div>
+      `;
+
+  document.getElementById(
+    "modalProductInfo"
+  ).innerHTML = `
+    <div class="product-category">
+      ${escapeHtml(
+        product.category || "Greenleaf"
+      )}
+    </div>
+
+    <p
+      style="
+        color:#777d79;
+        line-height:1.6;
+        font-size:14px
+      "
+    >
+      ${escapeHtml(
+        product.description || ""
+      )}
+    </p>
+
+    <div
+      style="
+        font-size:22px;
+        font-weight:700;
+        margin:14px 0 18px
+      "
+    >
+      ${money(product.price)}
+    </div>
+  `;
+
+  renderModalReviews(product);
+
+  document
+    .getElementById("productModal")
+    .classList.add("open");
+}
+
+
+function closeProductModal() {
+  document
+    .getElementById("productModal")
+    .classList.remove("open");
+}
+
+
+function closeModal(event) {
+  if (
+    event.target.id ===
+    "productModal"
+  ) {
+    closeProductModal();
+  }
+}
+
+
+function addModalProductToCart() {
+  if (!modalProductId) {
+    return;
+  }
+
+  addToCart(modalProductId);
+  closeProductModal();
+}
+
+
+function renderModalReviews(product) {
+  const root = document.getElementById(
+    "modalReviews"
+  );
+
+  const reviews =
+    product.reviews || [];
+
+  if (!reviews.length) {
+    root.innerHTML = `
+      <div class="muted">
+        Отзывов пока нет.
+      </div>
+    `;
+
+    return;
+  }
+
+  root.innerHTML = reviews
+    .map(review => `
+      <div class="review">
+
+        <div class="review-author">
+          ${escapeHtml(review.author)}
+        </div>
+
+        <div class="review-stars">
+          ${"•".repeat(
+            Number(review.rating)
+          )}
+        </div>
+
+        <div class="review-text">
+          ${escapeHtml(review.text)}
+        </div>
+
+      </div>
+    `)
+    .join("");
+}
+
+
+/* =========================================================
    CART
-========================= */
+========================================================= */
 
-function addToCart(id) {
+function addToCart(productId) {
+  const existing = cart.find(
+    item => item.id === productId
+  );
 
-  const item =
-    cart.find(
-      x => x.id === id
-    );
-
-
-  if (item) {
-    item.quantity++;
+  if (existing) {
+    existing.quantity += 1;
   } else {
     cart.push({
-      id,
-      quantity: 1
+      id: productId,
+      quantity: 1,
     });
   }
 
-
   renderCart();
-
-  openPage("cart");
+  showToast("Товар добавлен");
 }
 
 
 function changeQty(
-  id,
+  productId,
   delta
 ) {
+  const item = cart.find(
+    x => x.id === productId
+  );
 
-  const item =
-    cart.find(
-      x => x.id === id
-    );
-
-  if (!item) return;
-
+  if (!item) {
+    return;
+  }
 
   item.quantity += delta;
 
-
   if (item.quantity <= 0) {
-
-    cart =
-      cart.filter(
-        x => x.id !== id
-      );
-
+    cart = cart.filter(
+      x => x.id !== productId
+    );
   }
-
 
   renderCart();
 }
 
 
-function renderCart() {
+function getCartTotal() {
+  return cart.reduce(
+    (sum, item) => {
+      const product = products.find(
+        p => p.id === item.id
+      );
 
-  const root =
+      if (!product) {
+        return sum;
+      }
+
+      return (
+        sum +
+        Number(product.price) *
+        item.quantity
+      );
+    },
+    0
+  );
+}
+
+
+function renderCart() {
+  const root = document.getElementById(
+    "cartPanel"
+  );
+
+  const count = cart.reduce(
+    (sum, item) =>
+      sum + item.quantity,
+    0
+  );
+
+  document.getElementById(
+    "cartHeaderCount"
+  ).textContent =
+    count
+      ? `${count} шт.`
+      : "Пусто";
+
+  const badge =
     document.getElementById(
-      "cart"
+      "navCartBadge"
     );
 
-  if (!root) return;
-
-
-  let total = 0;
-  let count = 0;
-
+  if (count) {
+    badge.textContent = count;
+    badge.classList.remove(
+      "hidden"
+    );
+  } else {
+    badge.classList.add(
+      "hidden"
+    );
+  }
 
   if (!cart.length) {
-
     root.innerHTML = `
-
       <div class="empty">
-
-        <div class="empty-icon">
-          ${t("emptyCartIcon")}
-        </div>
-
-        <div>
-          ${t("emptyCart")}
-        </div>
-
+        В корзине пока ничего нет.
       </div>
-
     `;
 
-  } else {
+    document
+      .getElementById("checkoutPanel")
+      .classList.add("hidden");
 
-    root.innerHTML =
-      cart.map(item => {
+    return;
+  }
 
-        const p =
-          products.find(
-            x => x.id === item.id
-          );
+  let total = 0;
 
+  root.innerHTML = cart
+    .map(item => {
 
-        if (!p) return "";
+      const product =
+        products.find(
+          p => p.id === item.id
+        );
 
+      if (!product) {
+        return "";
+      }
 
-        const line =
-          Number(p.price)
-          * item.quantity;
+      const line =
+        Number(product.price) *
+        item.quantity;
 
+      total += line;
 
-        total += line;
-        count += item.quantity;
+      return `
+        <div class="cart-item">
 
+          <div class="row">
 
-        return `
+            <div>
+              <strong>
+                ${escapeHtml(
+                  product.name
+                )}
+              </strong>
 
-          <div class="cart-card">
-
-            <div class="row">
-
-              <div>
-
-                <div class="cart-name">
-                  ${escapeHtml(
-                    p.name
-                  )}
-                </div>
-
-                <div class="cart-price">
-                  ${money(line)}
-                </div>
-
+              <div
+                class="muted"
+                style="font-size:11px;margin-top:4px"
+              >
+                ${money(line)}
               </div>
+            </div>
 
+            <div class="qty">
 
-              <div class="qty">
+              <button
+                onclick="changeQty(${product.id},-1)"
+              >
+                −
+              </button>
 
-                <button
-                  onclick="changeQty(
-                    ${p.id},
-                    -1
-                  )"
-                >
-                  −
-                </button>
+              <strong>
+                ${item.quantity}
+              </strong>
 
-                <b>
-                  ${item.quantity}
-                </b>
-
-                <button
-                  onclick="changeQty(
-                    ${p.id},
-                    1
-                  )"
-                >
-                  +
-                </button>
-
-              </div>
+              <button
+                onclick="changeQty(${product.id},1)"
+              >
+                +
+              </button>
 
             </div>
 
           </div>
 
-        `;
+        </div>
+      `;
+    })
+    .join("");
 
-      }).join("");
+  root.innerHTML += `
+    <div class="total">
+      <span>Итого</span>
+      <span>${money(total)}</span>
+    </div>
 
-  }
+    <div style="height:12px"></div>
 
-
-  const totalElement =
-    document.getElementById(
-      "cartTotal"
-    );
-
-  if (totalElement) {
-    totalElement.textContent =
-      money(total);
-  }
-
-
-  const button =
-    document.getElementById(
-      "checkoutBtn"
-    );
-
-  if (button) {
-    button.disabled =
-      !cart.length;
-  }
-
-
-  const badge =
-    document.getElementById(
-      "cartBadge"
-    );
-
-  if (badge) {
-
-    badge.textContent =
-      count;
-
-    badge.classList.toggle(
-      "visible",
-      count > 0
-    );
-
-  }
-
-
-  const summary =
-    document.getElementById(
-      "cartSummary"
-    );
-
-  if (summary) {
-    summary.classList.toggle(
-      "hidden",
-      !cart.length
-    );
-  }
+    <button
+      class="primary"
+      onclick="showCheckout()"
+    >
+      Оформить заказ
+    </button>
+  `;
 }
 
 
-/* =========================
-   CHECKOUT
-========================= */
-
 function showCheckout() {
+  if (!cart.length) {
+    return;
+  }
 
-  if (!cart.length) return;
-
-
-  document.getElementById(
-    "checkout"
-  ).classList.remove(
-    "hidden"
-  );
-
+  document
+    .getElementById(
+      "checkoutPanel"
+    )
+    .classList.remove(
+      "hidden"
+    );
 
   window.scrollTo({
-    top:
-      document.body
-        .scrollHeight,
+    top: document.body.scrollHeight,
     behavior: "smooth"
   });
 }
 
 
-function hideCheckout() {
-
-  document.getElementById(
-    "checkout"
-  ).classList.add(
-    "hidden"
-  );
-}
-
+/* =========================================================
+   ORDER
+========================================================= */
 
 async function submitOrder() {
-
-  if (!cart.length) return;
-
+  if (!cart.length) {
+    return;
+  }
 
   const payload = {
-
     customer_name:
       document.getElementById(
         "name"
@@ -807,198 +757,119 @@ async function submitOrder() {
         "comment"
       ).value.trim(),
 
-    items: cart
+    items: cart,
   };
 
-
   if (!payload.customer_name) {
-
-    alert(
-      t("enterName")
+    showToast(
+      "Укажите имя"
     );
 
     return;
   }
-
 
   const result =
     document.getElementById(
       "orderResult"
     );
 
-
-  result.textContent =
-    t("sending");
-
+  result.innerHTML = `
+    <div class="notice">
+      Заказ отправляется...
+    </div>
+  `;
 
   try {
 
-    const res =
+    const response =
       await fetch(
         "/api/orders",
         {
           method: "POST",
-
           headers: {
             "Content-Type":
               "application/json"
           },
-
           body:
-            JSON.stringify(
-              payload
-            )
+            JSON.stringify(payload)
         }
       );
 
-
     const data =
-      await res.json();
+      await response.json();
 
-
-    if (!res.ok) {
-
-      result.textContent =
-        data.error ||
-        t("connectionError");
+    if (!response.ok) {
+      result.innerHTML = `
+        <div class="notice">
+          ${escapeHtml(
+            data.error ||
+            "Не удалось создать заказ."
+          )}
+        </div>
+      `;
 
       return;
     }
 
-
     result.innerHTML = `
-
       <div class="notice">
-
-        ${t("orderSuccess")}
-
-        №${data.order_id}.
-
+        Заказ №${data.order_id}
+        успешно оформлен.
+        Сумма:
         ${money(data.total)}.
-
       </div>
-
     `;
 
-
     if (!data.telegram_sent) {
-
       result.innerHTML += `
-
-        <div class="notice">
-
-          ${t(
-            "orderSavedTelegram"
-          )}
-
-          ${escapeHtml(
-            data.telegram_error || ""
-          )}
-
+        <div
+          class="notice"
+          style="background:#faf3e8"
+        >
+          Заказ сохранён, но уведомление
+          Telegram пока не отправлено.
         </div>
-
       `;
-
     }
-
 
     cart = [];
 
     renderCart();
 
-  } catch (e) {
+    showToast(
+      `Заказ №${data.order_id} создан`
+    );
 
-    result.textContent =
-      t("connectionError");
+  } catch (error) {
 
+    result.innerHTML = `
+      <div class="notice">
+        Ошибка соединения с сервером.
+      </div>
+    `;
   }
 }
 
 
-/* =========================
-   PROFILE
-========================= */
+/* =========================================================
+   ADMIN
+========================================================= */
 
-function renderProfile() {
-
-  const user =
-    telegramUser();
-
-
-  const nameElement =
-    document.getElementById(
-      "profileName"
-    );
-
-  const usernameElement =
-    document.getElementById(
-      "profileUsername"
-    );
-
-
-  if (!user) {
-
-    nameElement.textContent =
-      t("guest");
-
-    usernameElement.textContent =
-      "";
-
+async function checkAdmin() {
+  if (!tg) {
     return;
   }
 
-
-  const fullName =
-    [
-      user.first_name,
-      user.last_name
-    ]
-      .filter(Boolean)
-      .join(" ");
-
-
-  nameElement.textContent =
-    fullName ||
-    t("guest");
-
-
-  usernameElement.textContent =
-    user.username
-      ? "@" + user.username
-      : "";
-}
-
-
-function openAdminOrders() {
-
-  document.getElementById(
-    "adminOrders"
-  ).classList.remove(
-    "hidden"
-  );
-
-  loadOrders();
-}
-
-
-/* =========================
-   ADMIN
-========================= */
-
-async function checkAdmin() {
-
   const initData =
-    telegramInitData();
-
+    tg.initData || "";
 
   if (!initData) {
     return;
   }
 
-
   try {
 
-    const res =
+    const response =
       await fetch(
         "/api/admin/check",
         {
@@ -1009,368 +880,391 @@ async function checkAdmin() {
         }
       );
 
-
-    if (!res.ok) return;
-
-
     const data =
-      await res.json();
+      await response.json();
 
+    adminMode =
+      Boolean(data.admin);
 
-    if (data.admin) {
+    if (adminMode) {
+      document
+        .getElementById(
+          "adminPanel"
+        )
+        .classList.remove(
+          "hidden"
+        );
 
-      adminMode = true;
+      const user =
+        tg.initDataUnsafe &&
+        tg.initDataUnsafe.user;
 
-      document.getElementById(
-        "adminEntry"
-      ).classList.remove(
-        "hidden"
+      if (user) {
+        document.getElementById(
+          "profileInfo"
+        ).innerHTML = `
+          <h2>
+            ${escapeHtml(
+              user.first_name ||
+              "Владелец"
+            )}
+          </h2>
+
+          <div class="muted">
+            Панель владельца Greenleaf
+          </div>
+        `;
+      }
+
+      await loadOrders(
+        "active"
       );
-
     }
 
-  } catch (e) {
-
-    console.log(
-      "Admin check failed"
-    );
-
+  } catch (error) {
+    adminMode = false;
   }
 }
 
 
-function statusLabel(status) {
+function adminHeaders() {
+  const headers = {};
 
-  const map = {
+  if (tg && tg.initData) {
+    headers[
+      "X-Telegram-Init-Data"
+    ] = tg.initData;
+  }
 
-    new: "new",
-    accepted: "accepted",
-    packing: "packing",
-    delivery: "deliveryStatus",
-    completed: "completed",
-    cancelled: "cancelled"
-
-  };
-
-
-  return t(
-    map[status] || status
-  );
+  return headers;
 }
 
 
-async function loadOrders() {
+function showAdminSection(section) {
+  if (!adminMode) {
+    return;
+  }
 
-  if (!adminMode) return;
+  currentAdminSection =
+    section;
 
+  document
+    .getElementById(
+      "adminOrdersSection"
+    )
+    .classList.toggle(
+      "hidden",
+      section !== "orders"
+    );
+
+  document
+    .getElementById(
+      "adminProductsSection"
+    )
+    .classList.toggle(
+      "hidden",
+      section !== "products"
+    );
+
+  document
+    .getElementById(
+      "adminReviewsSection"
+    )
+    .classList.toggle(
+      "hidden",
+      section !== "reviews"
+    );
+
+  document
+    .getElementById(
+      "adminOrdersTab"
+    )
+    .classList.toggle(
+      "active",
+      section === "orders"
+    );
+
+  document
+    .getElementById(
+      "adminProductsTab"
+    )
+    .classList.toggle(
+      "active",
+      section === "products"
+    );
+
+  document
+    .getElementById(
+      "adminReviewsTab"
+    )
+    .classList.toggle(
+      "active",
+      section === "reviews"
+    );
+
+  if (section === "orders") {
+    loadOrders(
+      currentOrderView
+    );
+  }
+
+  if (section === "products") {
+    renderAdminProducts();
+  }
+
+  if (section === "reviews") {
+    renderAdminReviews();
+  }
+}
+
+
+/* =========================================================
+   ADMIN ORDERS
+========================================================= */
+
+async function loadOrders(view) {
+  if (!adminMode) {
+    return;
+  }
+
+  currentOrderView = view;
+
+  document
+    .getElementById(
+      "activeOrdersTab"
+    )
+    .classList.toggle(
+      "active",
+      view === "active"
+    );
+
+  document
+    .getElementById(
+      "archiveOrdersTab"
+    )
+    .classList.toggle(
+      "active",
+      view === "archive"
+    );
 
   const root =
     document.getElementById(
-      "orders"
+      "ordersList"
     );
 
-
-  root.innerHTML =
-    `<div class="muted">
-      ${t("loading")}
-    </div>`;
-
+  root.innerHTML = `
+    <div class="empty">
+      Загрузка...
+    </div>
+  `;
 
   try {
 
-    const res =
+    const response =
       await fetch(
-        "/api/orders",
+        `/api/orders?view=${view}`,
         {
-          headers: {
-            "X-Telegram-Init-Data":
-              telegramInitData()
-          }
+          headers:
+            adminHeaders()
         }
       );
 
-
     const data =
-      await res.json();
+      await response.json();
 
-
-    if (!res.ok) {
-
-      root.innerHTML =
-        `<div class="notice">
-          ${escapeHtml(
-            data.error ||
-            t("orderLoadError")
-          )}
-        </div>`;
-
-      return;
+    if (!response.ok) {
+      throw new Error(
+        data.error ||
+        "Ошибка"
+      );
     }
-
 
     renderOrders(
       data.orders || []
     );
 
+  } catch (error) {
 
-  } catch (e) {
-
-    root.innerHTML =
-      `<div class="notice">
-        ${t("orderLoadError")}
-      </div>`;
-
+    root.innerHTML = `
+      <div class="empty">
+        ${escapeHtml(
+          error.message ||
+          "Не удалось загрузить заказы."
+        )}
+      </div>
+    `;
   }
 }
 
 
 function renderOrders(orders) {
-
   const root =
     document.getElementById(
-      "orders"
+      "ordersList"
     );
 
-
   if (!orders.length) {
-
-    root.innerHTML =
-      `<div class="empty">
-        ${t("noOrders")}
-      </div>`;
+    root.innerHTML = `
+      <div class="empty">
+        ${
+          currentOrderView === "archive"
+            ? "Архив пока пуст."
+            : "Активных заказов нет."
+        }
+      </div>
+    `;
 
     return;
   }
 
+  root.innerHTML = orders
+    .map(order => {
 
-  root.innerHTML =
-    orders.map(order => {
-
-      const itemsHtml =
-        (order.items || [])
-          .map(item => `
-
-            <div class="order-line">
-
-              ${escapeHtml(
-                item.name
-              )}
-
-              × ${item.quantity}
-
-              —
-
-              ${money(
-                item.line_total
-              )}
-
-            </div>
-
-          `)
-          .join("");
-
-
-      const statusOptions =
-        Object.keys(
-          ORDER_STATUSES
+      const items =
+        Array.isArray(
+          order.items
         )
-        .map(status => `
-
-          <option
-            value="${status}"
-            ${
-              status ===
-              order.status
-                ? "selected"
-                : ""
-            }
-          >
-            ${statusLabel(
-              status
-            )}
-          </option>
-
-        `)
-        .join("");
-
-
-      const date =
-        order.created_at
-          ? new Date(
-              order.created_at
-            ).toLocaleString(
-              currentLanguage === "ru"
-                ? "ru-RU"
-                : "tk-TM"
-            )
-          : "";
-
+          ? order.items
+          : [];
 
       return `
-
-        <div class="admin-order">
+        <div class="order">
 
           <div class="row">
 
-            <h3>
-              №${order.id}
-            </h3>
+            <div>
+              <div class="order-number">
+                Заказ №${order.id}
+              </div>
 
-            <span class="order-status">
-              ${escapeHtml(
-                statusLabel(
-                  order.status
-                )
-              )}
-            </span>
+              <div class="order-meta">
+                ${escapeHtml(
+                  order.customer_name
+                )}
+                ·
+                ${escapeHtml(
+                  order.phone || ""
+                )}
+              </div>
+            </div>
+
+            <strong>
+              ${money(order.total)}
+            </strong>
 
           </div>
-
 
           <div class="order-meta">
-            ${escapeHtml(date)}
-          </div>
-
-
-          <div class="order-separator"></div>
-
-
-          <div>
-
-            <b>${t("client")}</b><br>
-
+            Город:
             ${escapeHtml(
-              order.customer_name
+              order.city || "—"
             )}
+            <br>
 
-          </div>
-
-
-          <br>
-
-
-          <div>
-
-            <b>${t("phoneLabel")}</b><br>
-
+            Получение:
             ${escapeHtml(
-              order.phone ||
-              t("notSpecified")
+              order.delivery_method || "—"
             )}
+            <br>
 
-          </div>
-
-
-          <br>
-
-
-          <div>
-
-            <b>${t("cityLabel")}</b><br>
-
+            Адрес:
             ${escapeHtml(
-              order.city ||
-              t("notSpecified")
+              order.address || "—"
             )}
+          </div>
+
+          <div class="order-items">
+
+            ${items
+              .map(item => `
+                <div>
+                  ${escapeHtml(
+                    item.name
+                  )}
+                  × ${item.quantity}
+                  —
+                  ${money(
+                    item.line_total
+                  )}
+                </div>
+              `)
+              .join("")}
 
           </div>
 
-
-          <br>
-
-
-          <div>
-
-            <b>${t("receiving")}</b><br>
-
+          <div class="order-meta">
+            Комментарий:
             ${escapeHtml(
-              order.delivery_method
+              order.comment || "нет"
             )}
-
           </div>
 
-
-          <br>
-
-
-          <div>
-
-            <b>${t(
-              "addressLabel"
-            )}</b><br>
-
-            ${escapeHtml(
-              order.address ||
-              t("notSpecified")
-            )}
-
-          </div>
-
-
-          <div class="order-separator"></div>
-
-
-          <b>
-            ${t("products")}
-          </b>
-
-
-          <div>
-            ${itemsHtml}
-          </div>
-
-
-          <div class="order-total">
-
-            ${t("total")}:
-
-            ${money(order.total)}
-
-          </div>
-
-
-          <div>
-
-            <b>
-              ${t("commentLabel")}
-            </b><br>
-
-            ${escapeHtml(
-              order.comment ||
-              t("none")
-            )}
-
-          </div>
-
-
-          <br>
-
-
-          <label>
-
-            ${t("orders")}
+          <div
+            class="order-actions"
+            style="margin-top:12px"
+          >
 
             <select
-              onchange="
-                changeOrderStatus(
-                  ${order.id},
-                  this.value
-                )
-              "
+              onchange="changeOrderStatus(
+                ${order.id},
+                this.value
+              )"
             >
 
-              ${statusOptions}
+              ${statusOption(
+                "new",
+                order.status,
+                "Новый"
+              )}
+
+              ${statusOption(
+                "processing",
+                order.status,
+                "В обработке"
+              )}
+
+              ${statusOption(
+                "ready",
+                order.status,
+                "Готов"
+              )}
+
+              ${statusOption(
+                "completed",
+                order.status,
+                "Завершён"
+              )}
+
+              ${statusOption(
+                "cancelled",
+                order.status,
+                "Отменён"
+              )}
 
             </select>
 
-          </label>
+          </div>
 
         </div>
-
       `;
-
     })
     .join("");
+}
+
+
+function statusOption(
+  value,
+  current,
+  label
+) {
+  return `
+    <option
+      value="${value}"
+      ${value === current ? "selected" : ""}
+    >
+      ${label}
+    </option>
+  `;
 }
 
 
@@ -1378,17 +1272,18 @@ async function changeOrderStatus(
   orderId,
   status
 ) {
-
   try {
 
-    const res =
+    const response =
       await fetch(
         `/api/orders/${orderId}/status`,
         {
           method: "PATCH",
-          headers:
-            adminHeaders(),
-
+          headers: {
+            "Content-Type":
+              "application/json",
+            ...adminHeaders()
+          },
           body:
             JSON.stringify({
               status
@@ -1396,66 +1291,847 @@ async function changeOrderStatus(
         }
       );
 
-
     const data =
-      await res.json();
+      await response.json();
 
-
-    if (!res.ok) {
-
-      alert(
+    if (!response.ok) {
+      throw new Error(
         data.error ||
-        t("orderLoadError")
+        "Не удалось изменить статус."
       );
-
-      await loadOrders();
-
-      return;
     }
 
-
-    await loadOrders();
-
-  } catch (e) {
-
-    alert(
-      t("connectionError")
+    showToast(
+      "Статус заказа обновлён"
     );
 
-    await loadOrders();
+    await loadOrders(
+      currentOrderView
+    );
 
+  } catch (error) {
+
+    showToast(
+      error.message
+    );
   }
 }
 
 
-/* =========================
+/* =========================================================
+   ADMIN PRODUCTS
+========================================================= */
+
+function renderAdminProducts() {
+  const root =
+    document.getElementById(
+      "adminProductsList"
+    );
+
+  if (!root) {
+    return;
+  }
+
+  if (!products.length) {
+    root.innerHTML = `
+      <div class="empty">
+        Товаров пока нет.
+      </div>
+    `;
+
+    return;
+  }
+
+  root.innerHTML = `
+    <h3>
+      Каталог
+    </h3>
+
+    ${products.map(product => `
+      <div class="admin-product">
+
+        <div class="admin-thumb">
+
+          ${
+            product.image_url
+              ? `
+                <img
+                  src="${escapeHtml(
+                    product.image_url
+                  )}"
+                  alt=""
+                >
+              `
+              : ""
+          }
+
+        </div>
+
+        <div class="admin-product-main">
+
+          <div class="admin-product-name">
+            ${escapeHtml(
+              product.name
+            )}
+          </div>
+
+          <div class="admin-product-price">
+            ${money(product.price)}
+            ${
+              product.category
+                ? " · " +
+                  escapeHtml(
+                    product.category
+                  )
+                : ""
+            }
+          </div>
+
+          <div
+            class="admin-product-actions"
+          >
+
+            <button
+              class="secondary"
+              onclick="editProduct(
+                ${product.id}
+              )"
+            >
+              Изменить
+            </button>
+
+            <button
+              class="danger"
+              onclick="removeProduct(
+                ${product.id}
+              )"
+            >
+              Удалить
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+    `).join("")}
+  `;
+}
+
+
+function resetProductForm() {
+  editingProductId = null;
+
+  document.getElementById(
+    "editProductId"
+  ).value = "";
+
+  document.getElementById(
+    "productName"
+  ).value = "";
+
+  document.getElementById(
+    "productCategory"
+  ).value = "";
+
+  document.getElementById(
+    "productPrice"
+  ).value = "";
+
+  document.getElementById(
+    "productDescription"
+  ).value = "";
+
+  document.getElementById(
+    "productImage"
+  ).value = "";
+
+  document.getElementById(
+    "productFormTitle"
+  ).textContent =
+    "Новый товар";
+
+  document.getElementById(
+    "productFormResult"
+  ).textContent = "";
+}
+
+
+function editProduct(productId) {
+  const product =
+    products.find(
+      p => p.id === productId
+    );
+
+  if (!product) {
+    return;
+  }
+
+  editingProductId =
+    productId;
+
+  document.getElementById(
+    "editProductId"
+  ).value =
+    productId;
+
+  document.getElementById(
+    "productName"
+  ).value =
+    product.name || "";
+
+  document.getElementById(
+    "productCategory"
+  ).value =
+    product.category || "";
+
+  document.getElementById(
+    "productPrice"
+  ).value =
+    product.price || "";
+
+  document.getElementById(
+    "productDescription"
+  ).value =
+    product.description || "";
+
+  document.getElementById(
+    "productImage"
+  ).value = "";
+
+  document.getElementById(
+    "productFormTitle"
+  ).textContent =
+    "Редактирование товара";
+
+  document
+    .getElementById(
+      "adminProductsSection"
+    )
+    .scrollIntoView({
+      behavior: "smooth"
+    });
+}
+
+
+async function compressImage(
+  file
+) {
+  if (!file) {
+    return null;
+  }
+
+  const image =
+    await new Promise(
+      (resolve, reject) => {
+
+        const img =
+          new Image();
+
+        img.onload =
+          () => resolve(img);
+
+        img.onerror =
+          reject;
+
+        img.src =
+          URL.createObjectURL(
+            file
+          );
+      }
+    );
+
+  const maxSide = 1600;
+
+  let width =
+    image.naturalWidth;
+
+  let height =
+    image.naturalHeight;
+
+  if (
+    width > maxSide ||
+    height > maxSide
+  ) {
+
+    const ratio =
+      Math.min(
+        maxSide / width,
+        maxSide / height
+      );
+
+    width =
+      Math.round(
+        width * ratio
+      );
+
+    height =
+      Math.round(
+        height * ratio
+      );
+  }
+
+  const canvas =
+    document.createElement(
+      "canvas"
+    );
+
+  canvas.width =
+    width;
+
+  canvas.height =
+    height;
+
+  const ctx =
+    canvas.getContext(
+      "2d"
+    );
+
+  ctx.drawImage(
+    image,
+    0,
+    0,
+    width,
+    height
+  );
+
+  const blob =
+    await new Promise(
+      resolve =>
+        canvas.toBlob(
+          resolve,
+          "image/jpeg",
+          0.82
+        )
+    );
+
+  return new File(
+    [blob],
+    "product.jpg",
+    {
+      type:
+        "image/jpeg"
+    }
+  );
+}
+
+
+async function saveProduct() {
+  if (!adminMode) {
+    return;
+  }
+
+  const name =
+    document.getElementById(
+      "productName"
+    ).value.trim();
+
+  const category =
+    document.getElementById(
+      "productCategory"
+    ).value.trim();
+
+  const price =
+    document.getElementById(
+      "productPrice"
+    ).value;
+
+  const description =
+    document.getElementById(
+      "productDescription"
+    ).value.trim();
+
+  const imageInput =
+    document.getElementById(
+      "productImage"
+    );
+
+  if (!name || price === "") {
+    showToast(
+      "Введите название и цену"
+    );
+
+    return;
+  }
+
+  const form =
+    new FormData();
+
+  form.append(
+    "name",
+    name
+  );
+
+  form.append(
+    "category",
+    category
+  );
+
+  form.append(
+    "price",
+    price
+  );
+
+  form.append(
+    "description",
+    description
+  );
+
+  if (
+    imageInput.files &&
+    imageInput.files[0]
+  ) {
+
+    const compressed =
+      await compressImage(
+        imageInput.files[0]
+      );
+
+    if (compressed) {
+      form.append(
+        "image",
+        compressed
+      );
+    }
+  }
+
+  const method =
+    editingProductId
+      ? "PUT"
+      : "POST";
+
+  const url =
+    editingProductId
+      ? `/api/products/${editingProductId}`
+      : "/api/products";
+
+  const result =
+    document.getElementById(
+      "productFormResult"
+    );
+
+  result.textContent =
+    "Сохраняем...";
+
+  try {
+
+    const response =
+      await fetch(
+        url,
+        {
+          method,
+          headers:
+            adminHeaders(),
+          body: form
+        }
+      );
+
+    const data =
+      await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.error ||
+        "Не удалось сохранить товар."
+      );
+    }
+
+    result.textContent =
+      "Товар сохранён.";
+
+    resetProductForm();
+
+    await loadProducts();
+
+    showToast(
+      "Товар сохранён"
+    );
+
+  } catch (error) {
+
+    result.textContent =
+      error.message;
+  }
+}
+
+
+async function removeProduct(
+  productId
+) {
+  if (!adminMode) {
+    return;
+  }
+
+  const product =
+    products.find(
+      p => p.id === productId
+    );
+
+  if (!product) {
+    return;
+  }
+
+  const confirmed =
+    confirm(
+      `Удалить товар «${product.name}»?`
+    );
+
+  if (!confirmed) {
+    return;
+  }
+
+  try {
+
+    const response =
+      await fetch(
+        `/api/products/${productId}`,
+        {
+          method: "DELETE",
+          headers:
+            adminHeaders()
+        }
+      );
+
+    const data =
+      await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.error ||
+        "Не удалось удалить товар."
+      );
+    }
+
+    cart =
+      cart.filter(
+        item =>
+          item.id !== productId
+      );
+
+    await loadProducts();
+
+    renderCart();
+
+    showToast(
+      "Товар удалён"
+    );
+
+  } catch (error) {
+
+    showToast(
+      error.message
+    );
+  }
+}
+
+
+/* =========================================================
+   ADMIN REVIEWS
+========================================================= */
+
+function renderReviewProductSelect() {
+  const select =
+    document.getElementById(
+      "reviewProduct"
+    );
+
+  if (!select) {
+    return;
+  }
+
+  select.innerHTML =
+    products.map(product => `
+      <option value="${product.id}">
+        ${escapeHtml(
+          product.name
+        )}
+      </option>
+    `).join("");
+}
+
+
+function renderAdminReviews() {
+  const root =
+    document.getElementById(
+      "adminReviewsList"
+    );
+
+  if (!root) {
+    return;
+  }
+
+  const reviews =
+    products.flatMap(
+      product =>
+        (product.reviews || [])
+          .map(review => ({
+            ...review,
+            productName:
+              product.name
+          }))
+    );
+
+  if (!reviews.length) {
+    root.innerHTML = `
+      <div class="empty">
+        Отзывов пока нет.
+      </div>
+    `;
+
+    return;
+  }
+
+  root.innerHTML = `
+    <h3>
+      Отзывы
+    </h3>
+
+    ${reviews.map(review => `
+      <div class="review">
+
+        <div class="row">
+
+          <div>
+            <div class="review-author">
+              ${escapeHtml(
+                review.author
+              )}
+            </div>
+
+            <div class="muted">
+              ${escapeHtml(
+                review.productName
+              )}
+            </div>
+          </div>
+
+          <button
+            class="danger"
+            onclick="removeReview(
+              ${review.id}
+            )"
+          >
+            Удалить
+          </button>
+
+        </div>
+
+        <div class="review-stars">
+          ${"•".repeat(
+            Number(review.rating)
+          )}
+        </div>
+
+        <div class="review-text">
+          ${escapeHtml(
+            review.text
+          )}
+        </div>
+
+      </div>
+    `).join("")}
+  `;
+}
+
+
+async function saveReview() {
+  const productId =
+    document.getElementById(
+      "reviewProduct"
+    ).value;
+
+  const author =
+    document.getElementById(
+      "reviewAuthor"
+    ).value.trim();
+
+  const rating =
+    document.getElementById(
+      "reviewRating"
+    ).value;
+
+  const text =
+    document.getElementById(
+      "reviewText"
+    ).value.trim();
+
+  if (!author || !text) {
+    showToast(
+      "Заполните автора и текст"
+    );
+
+    return;
+  }
+
+  try {
+
+    const response =
+      await fetch(
+        "/api/reviews",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json",
+            ...adminHeaders()
+          },
+          body:
+            JSON.stringify({
+              product_id:
+                Number(productId),
+              author,
+              rating:
+                Number(rating),
+              text
+            })
+        }
+      );
+
+    const data =
+      await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.error ||
+        "Не удалось добавить отзыв."
+      );
+    }
+
+    document.getElementById(
+      "reviewAuthor"
+    ).value = "";
+
+    document.getElementById(
+      "reviewText"
+    ).value = "";
+
+    await loadProducts();
+
+    showToast(
+      "Отзыв добавлен"
+    );
+
+  } catch (error) {
+
+    showToast(
+      error.message
+    );
+  }
+}
+
+
+async function removeReview(
+  reviewId
+) {
+  if (!adminMode) {
+    return;
+  }
+
+  if (
+    !confirm(
+      "Удалить этот отзыв?"
+    )
+  ) {
+    return;
+  }
+
+  try {
+
+    const response =
+      await fetch(
+        `/api/reviews/${reviewId}`,
+        {
+          method: "DELETE",
+          headers:
+            adminHeaders()
+        }
+      );
+
+    const data =
+      await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.error ||
+        "Не удалось удалить отзыв."
+      );
+    }
+
+    await loadProducts();
+
+    showToast(
+      "Отзыв удалён"
+    );
+
+  } catch (error) {
+
+    showToast(
+      error.message
+    );
+  }
+}
+
+
+/* =========================================================
    HELPERS
-========================= */
+========================================================= */
+
+function money(value) {
+  return (
+    Number(value)
+      .toLocaleString("ru-RU") +
+    " TMT"
+  );
+}
+
+
+function plural(number) {
+  const n =
+    Math.abs(number) % 100;
+
+  const n1 =
+    n % 10;
+
+  if (
+    n > 10 &&
+    n < 20
+  ) {
+    return "ов";
+  }
+
+  if (n1 === 1) {
+    return "";
+  }
+
+  if (
+    n1 >= 2 &&
+    n1 <= 4
+  ) {
+    return "а";
+  }
+
+  return "ов";
+}
+
 
 function escapeHtml(value) {
-
   return String(value)
-
     .replaceAll(
       "&",
       "&amp;"
     )
-
     .replaceAll(
       "<",
       "&lt;"
     )
-
     .replaceAll(
       ">",
       "&gt;"
     )
-
     .replaceAll(
       '"',
       "&quot;"
     )
-
     .replaceAll(
       "'",
       "&#039;"
@@ -1463,55 +2139,43 @@ function escapeHtml(value) {
 }
 
 
-/* =========================
-   START
-========================= */
-
-async function startApp() {
-
-  if (
-    window.Telegram &&
-    window.Telegram.WebApp
-  ) {
-
-    Telegram.WebApp.ready();
-
-    Telegram.WebApp.expand();
-
-  }
-
-
-  applyLanguage();
-
-  renderProfile();
-
-
-  try {
-
-    await loadCatalog();
-
-  } catch (e) {
-
-    const status =
-      document.getElementById(
-        "catalogStatus"
-      );
-
-    if (status) {
-
-      status.textContent =
-        t("catalogError");
-
-    }
-
-  }
-
-
-  renderProfile();
-
-  await checkAdmin();
-
+function escapeJs(value) {
+  return String(value)
+    .replaceAll(
+      "\\",
+      "\\\\"
+    )
+    .replaceAll(
+      "'",
+      "\\'"
+    );
 }
 
 
-startApp();
+function showToast(message) {
+  const toast =
+    document.getElementById(
+      "toast"
+    );
+
+  toast.textContent =
+    message;
+
+  toast.classList.add(
+    "show"
+  );
+
+  clearTimeout(
+    window.toastTimer
+  );
+
+  window.toastTimer =
+    setTimeout(
+      () => {
+        toast.classList.remove(
+          "show"
+        );
+      },
+      2200
+    );
+}
