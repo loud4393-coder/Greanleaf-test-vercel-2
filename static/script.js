@@ -1,340 +1,416 @@
 let products = [];
 let cart = [];
-let currentCategory = "Все";
-let currentLanguage = "ru";
-let adminMode = false;
-let currentAdminSection = "orders";
+
+let currentLanguage =
+  localStorage.getItem("greenleaf_language") || "ru";
+
+let telegramInitData = "";
+
+let isOwner = false;
+
+let currentAdminTab = "orders";
 let currentOrderView = "active";
-let editingProductId = null;
-let modalProductId = null;
 
 
-/* =========================================================
-   TELEGRAM
-========================================================= */
+// ---------------------------------------------------------
+// TELEGRAM
+// ---------------------------------------------------------
 
-const tg =
-  window.Telegram &&
-  window.Telegram.WebApp
-    ? window.Telegram.WebApp
-    : null;
+function setupTelegram() {
+  if (
+    window.Telegram &&
+    window.Telegram.WebApp
+  ) {
+    const tg = window.Telegram.WebApp;
 
-if (tg) {
-  tg.ready();
-  tg.expand();
+    tg.ready();
+    tg.expand();
+
+    telegramInitData =
+      tg.initData || "";
+
+    if (
+      tg.initDataUnsafe &&
+      tg.initDataUnsafe.user
+    ) {
+      const user =
+        tg.initDataUnsafe.user;
+
+      const fullName = [
+        user.first_name,
+        user.last_name
+      ]
+        .filter(Boolean)
+        .join(" ");
+
+      document.getElementById(
+        "profileName"
+      ).textContent =
+        fullName ||
+        user.username ||
+        "Пользователь";
+    }
+  }
 }
 
 
-/* =========================================================
-   INIT DATA
-========================================================= */
+// ---------------------------------------------------------
+// FETCH HELPER
+// ---------------------------------------------------------
 
-async function init() {
-  await loadProducts();
-  await checkAdmin();
+function requestHeaders() {
+  const headers = {};
 
-  renderCart();
-}
-
-init().catch(() => {
-  showToast("Не удалось загрузить приложение");
-});
-
-
-/* =========================================================
-   NAVIGATION
-========================================================= */
-
-function showPage(page) {
-  document
-    .querySelectorAll(".page")
-    .forEach(el => {
-      el.classList.remove("active");
-    });
-
-  const target = document.getElementById(
-    `page-${page}`
-  );
-
-  if (target) {
-    target.classList.add("active");
+  if (telegramInitData) {
+    headers["X-Telegram-Init-Data"] =
+      telegramInitData;
   }
 
-  document
-    .querySelectorAll(".nav-btn")
-    .forEach(btn => {
-      btn.classList.toggle(
-        "active",
-        btn.dataset.page === page
-      );
-    });
-
-  window.scrollTo({
-    top: 0,
-    behavior: "smooth"
-  });
+  return headers;
 }
 
 
-/* =========================================================
-   LANGUAGE
-========================================================= */
+async function apiFetch(
+  url,
+  options = {}
+) {
+  options.headers = {
+    ...(options.headers || {}),
+    ...requestHeaders()
+  };
+
+  return fetch(
+    url,
+    options
+  );
+}
+
+
+// ---------------------------------------------------------
+// LANGUAGE
+// ---------------------------------------------------------
 
 function setLanguage(language) {
   currentLanguage = language;
 
+  localStorage.setItem(
+    "greenleaf_language",
+    language
+  );
+
   document
-    .getElementById("langRU")
+    .getElementById("langRu")
     .classList.toggle(
       "active",
       language === "ru"
     );
 
   document
-    .getElementById("langTM")
+    .getElementById("langTm")
     .classList.toggle(
       "active",
       language === "tm"
     );
 
-  /*
-    Сейчас структура приложения остаётся
-    одинаковой. Переключатель уже готов
-    для следующего слоя локализации.
-  */
+  document
+    .querySelectorAll("[data-ru][data-tm]")
+    .forEach(element => {
 
-  showToast(
-    language === "ru"
-      ? "Русский язык"
-      : "Türkmen dili"
-  );
+      element.textContent =
+        element.dataset[language];
+
+    });
+
+  updatePlaceholders();
 }
 
 
-/* =========================================================
-   PRODUCTS
-========================================================= */
+function updatePlaceholders() {
+  const ru = currentLanguage === "ru";
 
-async function loadProducts() {
-  const response = await fetch(
-    "/api/products"
-  );
+  const fields = {
+    name: ru
+      ? "Например, Alina"
+      : "Mysal üçin, Alina",
 
-  if (!response.ok) {
-    throw new Error(
-      "Products request failed"
+    phone: ru
+      ? "+993 ..."
+      : "+993 ...",
+
+    city: ru
+      ? "Туркменбаши"
+      : "Türkmenbaşy",
+
+    address: ru
+      ? "Адрес или пункт"
+      : "Salgysy ýa-da nokady",
+
+    comment: ru
+      ? "Дополнительная информация"
+      : "Goşmaça maglumat",
+
+    productName: ru
+      ? "Название товара"
+      : "Önümiň ady",
+
+    productCategory: ru
+      ? "Например, уход"
+      : "Mysal üçin, ideg",
+
+    productPrice: ru
+      ? "600"
+      : "600",
+
+    productDescription: ru
+      ? "Описание товара"
+      : "Önümiň düşündirişi"
+  };
+
+  Object.entries(fields)
+    .forEach(([id, value]) => {
+
+      const element =
+        document.getElementById(id);
+
+      if (element) {
+        element.placeholder =
+          value;
+      }
+    });
+}
+
+
+// ---------------------------------------------------------
+// NAVIGATION
+// ---------------------------------------------------------
+
+function showPage(page) {
+
+  document
+    .querySelectorAll(".page")
+    .forEach(element => {
+      element.classList.remove("active");
+    });
+
+  document
+    .getElementById(
+      "page" +
+      page.charAt(0).toUpperCase() +
+      page.slice(1)
+    )
+    .classList.add("active");
+
+  document
+    .querySelectorAll(".nav-btn")
+    .forEach(button => {
+      button.classList.remove("active");
+    });
+
+  const nav =
+    document.getElementById(
+      "nav" +
+      page.charAt(0).toUpperCase() +
+      page.slice(1)
     );
+
+  if (nav) {
+    nav.classList.add("active");
   }
 
-  const data = await response.json();
-
-  products = data.products || [];
-
-  renderCategories();
-  renderCatalog();
-  renderHomeProducts();
-  renderReviewProductSelect();
-  renderAdminProducts();
-  renderAdminReviews();
-}
-
-
-function renderCategories() {
-  const root = document.getElementById(
-    "categories"
-  );
-
-  const categories = [
-    "Все",
-    ...new Set(
-      products
-        .map(p => p.category)
-        .filter(Boolean)
-    )
-  ];
+  window.scrollTo({
+    top:0,
+    behavior:"smooth"
+  });
 
   if (
-    currentCategory !== "Все" &&
-    !categories.includes(
-      currentCategory
-    )
+    page === "profile" &&
+    isOwner
   ) {
-    currentCategory = "Все";
+    loadOrders(
+      currentOrderView
+    );
   }
-
-  root.innerHTML = categories
-    .map(category => `
-      <button
-        class="category ${
-          category === currentCategory
-            ? "active"
-            : ""
-        }"
-        onclick="selectCategory('${escapeJs(category)}')"
-      >
-        ${escapeHtml(category)}
-      </button>
-    `)
-    .join("");
 }
 
 
-function selectCategory(category) {
-  currentCategory = category;
+// ---------------------------------------------------------
+// MONEY
+// ---------------------------------------------------------
 
-  renderCategories();
-  renderCatalog();
-}
-
-
-function filteredProducts() {
-  if (currentCategory === "Все") {
-    return products;
-  }
-
-  return products.filter(
-    product =>
-      product.category ===
-      currentCategory
+function money(value) {
+  return (
+    Number(value)
+      .toLocaleString(
+        "ru-RU"
+      ) +
+    " TMT"
   );
 }
 
 
-function renderCatalog() {
-  const root = document.getElementById(
-    "catalogProducts"
-  );
+// ---------------------------------------------------------
+// ESCAPE
+// ---------------------------------------------------------
 
-  const list = filteredProducts();
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll(
+      "&",
+      "&amp;"
+    )
+    .replaceAll(
+      "<",
+      "&lt;"
+    )
+    .replaceAll(
+      ">",
+      "&gt;"
+    )
+    .replaceAll(
+      '"',
+      "&quot;"
+    )
+    .replaceAll(
+      "'",
+      "&#039;"
+    );
+}
 
-  document.getElementById(
-    "catalogCount"
-  ).textContent =
-    `${list.length} товар${plural(
-      list.length
-    )}`;
 
-  if (!list.length) {
-    root.innerHTML = `
-      <div
-        class="empty"
-        style="grid-column:1/-1"
+// ---------------------------------------------------------
+// PRODUCTS
+// ---------------------------------------------------------
+
+async function loadProducts() {
+
+  try {
+
+    const response =
+      await apiFetch(
+        "/api/products"
+      );
+
+    const data =
+      await response.json();
+
+    products =
+      data.products || [];
+
+    renderHomeProducts();
+    renderCatalog();
+    renderCart();
+    renderAdminProducts();
+
+    document.getElementById(
+      "catalogStatus"
+    ).textContent =
+      currentLanguage === "ru"
+        ? `Товаров: ${products.length}`
+        : `Önümler: ${products.length}`;
+
+  } catch (error) {
+
+    document.getElementById(
+      "catalogStatus"
+    ).textContent =
+      currentLanguage === "ru"
+        ? "Не удалось загрузить каталог"
+        : "Katalogy ýükläp bolmady";
+
+  }
+}
+
+
+function productImage(product) {
+
+  if (product.image_url) {
+
+    return `
+      <img
+        class="product-image"
+        src="${escapeHtml(product.image_url)}"
+        alt="${escapeHtml(product.name)}"
       >
-        Каталог пока пуст.
-      </div>
     `;
 
-    return;
   }
 
-  root.innerHTML = list
-    .map(renderProductCard)
-    .join("");
-}
-
-
-function renderHomeProducts() {
-  const root = document.getElementById(
-    "homeProducts"
-  );
-
-  const list = products.slice(0, 4);
-
-  document.getElementById(
-    "homeCount"
-  ).textContent =
-    `${products.length} товар${plural(
-      products.length
-    )}`;
-
-  if (!list.length) {
-    root.innerHTML = `
-      <div class="empty">
-        Каталог пока пуст.
-      </div>
-    `;
-
-    return;
-  }
-
-  root.innerHTML = `
-    <div class="products">
-      ${list.map(renderProductCard).join("")}
+  return `
+    <div class="product-no-image">
+      Greenleaf
     </div>
   `;
 }
 
 
-function renderProductCard(product) {
-  const image = product.image_url
-    ? `
-      <img
-        src="${escapeHtml(product.image_url)}"
-        alt="${escapeHtml(product.name)}"
-        loading="lazy"
-      >
-    `
-    : `
-      <div class="product-placeholder">
-        GREENLEAF
-      </div>
-    `;
+function productCard(product) {
 
-  const rating =
-    product.review_count > 0
-      ? `
-        <div class="rating">
-          ${Number(product.rating).toFixed(1)}
-          · ${product.review_count} отзыв${plural(
-            product.review_count
-          )}
-        </div>
-      `
-      : "";
+  const addText =
+    currentLanguage === "ru"
+      ? "В корзину"
+      : "Sebede goş";
+
+  const description =
+    product.description ||
+    (
+      currentLanguage === "ru"
+        ? "Описание отсутствует."
+        : "Düşündiriş ýok."
+    );
 
   return `
-    <article
-      class="product"
-      onclick="openProduct(${product.id})"
-    >
+    <article class="card">
 
-      <div class="product-image">
-        ${image}
-      </div>
+      ${productImage(product)}
 
       <div class="product-body">
 
-        <div class="product-category">
-          ${escapeHtml(
-            product.category ||
-            "Greenleaf"
-          )}
-        </div>
+        ${
+          product.category
+            ? `
+              <div class="product-category">
+                ${escapeHtml(product.category)}
+              </div>
+            `
+            : ""
+        }
 
         <div class="product-name">
           ${escapeHtml(product.name)}
         </div>
 
         <div class="product-description">
-          ${escapeHtml(
-            product.description || ""
-          )}
+          ${escapeHtml(description)}
         </div>
-
-        ${rating}
 
         <div class="product-bottom">
 
-          <div class="product-price">
+          <div class="price">
             ${money(product.price)}
           </div>
 
-          <button
-            class="small-button"
-            onclick="event.stopPropagation();addToCart(${product.id})"
-          >
-            В корзину
-          </button>
+          <div style="
+            display:flex;
+            gap:6px;
+          ">
+
+            <button
+              class="btn secondary"
+              onclick="openProductModal(${product.id})"
+            >
+              ${currentLanguage === "ru"
+                ? "Подробнее"
+                : "Giňişleýin"}
+            </button>
+
+            <button
+              class="btn"
+              onclick="addToCart(${product.id})"
+            >
+              ${addText}
+            </button>
+
+          </div>
 
         </div>
 
@@ -345,277 +421,251 @@ function renderProductCard(product) {
 }
 
 
-/* =========================================================
-   PRODUCT MODAL
-========================================================= */
+function renderCatalog() {
 
-function openProduct(productId) {
-  const product = products.find(
-    p => p.id === productId
-  );
+  const root =
+    document.getElementById(
+      "catalog"
+    );
 
-  if (!product) {
-    return;
-  }
+  if (!products.length) {
 
-  modalProductId = productId;
-
-  document.getElementById(
-    "modalProductName"
-  ).textContent = product.name;
-
-  const imageRoot = document.getElementById(
-    "modalProductImage"
-  );
-
-  imageRoot.innerHTML =
-    product.image_url
-      ? `
-        <img
-          src="${escapeHtml(
-            product.image_url
-          )}"
-          alt="${escapeHtml(
-            product.name
-          )}"
-        >
-      `
-      : `
-        <div class="product-placeholder">
-          GREENLEAF
-        </div>
-      `;
-
-  document.getElementById(
-    "modalProductInfo"
-  ).innerHTML = `
-    <div class="product-category">
-      ${escapeHtml(
-        product.category || "Greenleaf"
-      )}
-    </div>
-
-    <p
-      style="
-        color:#777d79;
-        line-height:1.6;
-        font-size:14px
-      "
-    >
-      ${escapeHtml(
-        product.description || ""
-      )}
-    </p>
-
-    <div
-      style="
-        font-size:22px;
-        font-weight:700;
-        margin:14px 0 18px
-      "
-    >
-      ${money(product.price)}
-    </div>
-  `;
-
-  renderModalReviews(product);
-
-  document
-    .getElementById("productModal")
-    .classList.add("open");
-}
-
-
-function closeProductModal() {
-  document
-    .getElementById("productModal")
-    .classList.remove("open");
-}
-
-
-function closeModal(event) {
-  if (
-    event.target.id ===
-    "productModal"
-  ) {
-    closeProductModal();
-  }
-}
-
-
-function addModalProductToCart() {
-  if (!modalProductId) {
-    return;
-  }
-
-  addToCart(modalProductId);
-  closeProductModal();
-}
-
-
-function renderModalReviews(product) {
-  const root = document.getElementById(
-    "modalReviews"
-  );
-
-  const reviews =
-    product.reviews || [];
-
-  if (!reviews.length) {
     root.innerHTML = `
-      <div class="muted">
-        Отзывов пока нет.
+      <div class="empty">
+        ${
+          currentLanguage === "ru"
+            ? "Каталог пока пуст."
+            : "Katalog häzirlikçe boş."
+        }
       </div>
     `;
 
     return;
   }
 
-  root.innerHTML = reviews
-    .map(review => `
-      <div class="review">
-
-        <div class="review-author">
-          ${escapeHtml(review.author)}
-        </div>
-
-        <div class="review-stars">
-          ${"•".repeat(
-            Number(review.rating)
-          )}
-        </div>
-
-        <div class="review-text">
-          ${escapeHtml(review.text)}
-        </div>
-
-      </div>
-    `)
-    .join("");
+  root.innerHTML =
+    products
+      .map(productCard)
+      .join("");
 }
 
 
-/* =========================================================
-   CART
-========================================================= */
+function renderHomeProducts() {
 
-function addToCart(productId) {
-  const existing = cart.find(
-    item => item.id === productId
-  );
+  const root =
+    document.getElementById(
+      "homeProducts"
+    );
 
-  if (existing) {
-    existing.quantity += 1;
+  const featured =
+    products.slice(0, 3);
+
+  if (!featured.length) {
+
+    root.innerHTML = `
+      <div class="empty">
+        ${
+          currentLanguage === "ru"
+            ? "Товары появятся здесь после добавления владельцем."
+            : "Eýesi önüm goşandan soň önümler şu ýerde görkeziler."
+        }
+      </div>
+    `;
+
+    return;
+  }
+
+  root.innerHTML =
+    featured
+      .map(productCard)
+      .join("");
+}
+
+
+// ---------------------------------------------------------
+// PRODUCT MODAL
+// ---------------------------------------------------------
+
+function openProductModal(id) {
+
+  const product =
+    products.find(
+      item => item.id === id
+    );
+
+  if (!product) return;
+
+  document.getElementById(
+    "modalProductName"
+  ).textContent =
+    product.name;
+
+  document.getElementById(
+    "modalProductContent"
+  ).innerHTML = `
+    ${productImage(product)}
+
+    <div style="
+      padding-top:18px;
+    ">
+
+      ${
+        product.category
+          ? `
+            <div class="product-category">
+              ${escapeHtml(product.category)}
+            </div>
+          `
+          : ""
+      }
+
+      <div style="
+        color:#555b57;
+        line-height:1.7;
+        margin:12px 0 18px;
+      ">
+        ${escapeHtml(
+          product.description || ""
+        )}
+      </div>
+
+      <div class="price">
+        ${money(product.price)}
+      </div>
+
+      <button
+        class="btn full"
+        style="margin-top:16px"
+        onclick="
+          addToCart(${product.id});
+          closeProductModal();
+        "
+      >
+        ${
+          currentLanguage === "ru"
+            ? "Добавить в корзину"
+            : "Sebede goş"
+        }
+      </button>
+
+    </div>
+  `;
+
+  document
+    .getElementById(
+      "productModal"
+    )
+    .classList.add("visible");
+}
+
+
+function closeProductModal(event) {
+
+  if (
+    event &&
+    event.target !==
+      document.getElementById(
+        "productModal"
+      )
+  ) {
+    return;
+  }
+
+  document
+    .getElementById(
+      "productModal"
+    )
+    .classList.remove("visible");
+}
+
+
+// ---------------------------------------------------------
+// CART
+// ---------------------------------------------------------
+
+function addToCart(id) {
+
+  const item =
+    cart.find(
+      x => x.id === id
+    );
+
+  if (item) {
+    item.quantity++;
   } else {
     cart.push({
-      id: productId,
-      quantity: 1,
+      id,
+      quantity:1
     });
   }
 
   renderCart();
-  showToast("Товар добавлен");
+
+  showPage("cart");
 }
 
 
 function changeQty(
-  productId,
+  id,
   delta
 ) {
-  const item = cart.find(
-    x => x.id === productId
-  );
 
-  if (!item) {
-    return;
-  }
+  const item =
+    cart.find(
+      x => x.id === id
+    );
+
+  if (!item) return;
 
   item.quantity += delta;
 
   if (item.quantity <= 0) {
-    cart = cart.filter(
-      x => x.id !== productId
-    );
+
+    cart =
+      cart.filter(
+        x => x.id !== id
+      );
   }
 
   renderCart();
 }
 
 
-function getCartTotal() {
-  return cart.reduce(
-    (sum, item) => {
-      const product = products.find(
-        p => p.id === item.id
-      );
-
-      if (!product) {
-        return sum;
-      }
-
-      return (
-        sum +
-        Number(product.price) *
-        item.quantity
-      );
-    },
-    0
-  );
-}
-
-
 function renderCart() {
-  const root = document.getElementById(
-    "cartPanel"
-  );
 
-  const count = cart.reduce(
-    (sum, item) =>
-      sum + item.quantity,
-    0
-  );
-
-  document.getElementById(
-    "cartHeaderCount"
-  ).textContent =
-    count
-      ? `${count} шт.`
-      : "Пусто";
-
-  const badge =
+  const root =
     document.getElementById(
-      "navCartBadge"
+      "cart"
     );
-
-  if (count) {
-    badge.textContent = count;
-    badge.classList.remove(
-      "hidden"
-    );
-  } else {
-    badge.classList.add(
-      "hidden"
-    );
-  }
 
   if (!cart.length) {
+
     root.innerHTML = `
       <div class="empty">
-        В корзине пока ничего нет.
+        ${
+          currentLanguage === "ru"
+            ? "Корзина пока пустая."
+            : "Sebet häzirlikçe boş."
+        }
       </div>
     `;
 
-    document
-      .getElementById("checkoutPanel")
-      .classList.add("hidden");
+    document.getElementById(
+      "cartTotal"
+    ).textContent =
+      "Итого: 0 TMT";
+
+    document.getElementById(
+      "checkoutBtn"
+    ).disabled = true;
 
     return;
   }
 
   let total = 0;
 
-  root.innerHTML = cart
-    .map(item => {
+  root.innerHTML =
+    cart.map(item => {
 
       const product =
         products.find(
@@ -635,19 +685,21 @@ function renderCart() {
       return `
         <div class="cart-item">
 
-          <div class="row">
+          <div class="cart-row">
 
             <div>
-              <strong>
+              <div style="
+                font-weight:700;
+                margin-bottom:5px;
+              ">
                 ${escapeHtml(
                   product.name
                 )}
-              </strong>
+              </div>
 
-              <div
-                class="muted"
-                style="font-size:11px;margin-top:4px"
-              >
+              <div style="
+                color:#747a76;
+              ">
                 ${money(line)}
               </div>
             </div>
@@ -655,17 +707,27 @@ function renderCart() {
             <div class="qty">
 
               <button
-                onclick="changeQty(${product.id},-1)"
+                onclick="
+                  changeQty(
+                    ${product.id},
+                    -1
+                  )
+                "
               >
                 −
               </button>
 
-              <strong>
+              <b>
                 ${item.quantity}
-              </strong>
+              </b>
 
               <button
-                onclick="changeQty(${product.id},1)"
+                onclick="
+                  changeQty(
+                    ${product.id},
+                    1
+                  )
+                "
               >
                 +
               </button>
@@ -676,57 +738,64 @@ function renderCart() {
 
         </div>
       `;
-    })
-    .join("");
 
-  root.innerHTML += `
-    <div class="total">
-      <span>Итого</span>
-      <span>${money(total)}</span>
-    </div>
+    }).join("");
 
-    <div style="height:12px"></div>
+  document.getElementById(
+    "cartTotal"
+  ).textContent =
+    `${
+      currentLanguage === "ru"
+        ? "Итого"
+        : "Jemi"
+    }: ${money(total)}`;
 
-    <button
-      class="primary"
-      onclick="showCheckout()"
-    >
-      Оформить заказ
-    </button>
-  `;
+  document.getElementById(
+    "checkoutBtn"
+  ).disabled = false;
 }
 
 
+// ---------------------------------------------------------
+// CHECKOUT
+// ---------------------------------------------------------
+
 function showCheckout() {
+
   if (!cart.length) {
     return;
   }
 
   document
     .getElementById(
-      "checkoutPanel"
+      "checkout"
     )
     .classList.remove(
       "hidden"
     );
-
-  window.scrollTo({
-    top: document.body.scrollHeight,
-    behavior: "smooth"
-  });
 }
 
 
-/* =========================================================
-   ORDER
-========================================================= */
+function hideCheckout() {
+
+  document
+    .getElementById(
+      "checkout"
+    )
+    .classList.add(
+      "hidden"
+    );
+}
+
 
 async function submitOrder() {
+
   if (!cart.length) {
     return;
   }
 
   const payload = {
+
     customer_name:
       document.getElementById(
         "name"
@@ -757,53 +826,288 @@ async function submitOrder() {
         "comment"
       ).value.trim(),
 
-    items: cart,
+    items:cart
   };
 
+
   if (!payload.customer_name) {
-    showToast(
-      "Укажите имя"
+
+    alert(
+      currentLanguage === "ru"
+        ? "Укажите имя."
+        : "Adyňyzy ýazyň."
     );
 
     return;
   }
+
 
   const result =
     document.getElementById(
       "orderResult"
     );
 
-  result.innerHTML = `
-    <div class="notice">
-      Заказ отправляется...
-    </div>
-  `;
+  result.textContent =
+    currentLanguage === "ru"
+      ? "Отправляем заказ..."
+      : "Sargyt ugradylyar...";
+
 
   try {
 
     const response =
-      await fetch(
+      await apiFetch(
         "/api/orders",
         {
-          method: "POST",
-          headers: {
+          method:"POST",
+          headers:{
             "Content-Type":
               "application/json"
           },
-          body:
-            JSON.stringify(payload)
+          body:JSON.stringify(
+            payload
+          )
         }
       );
 
     const data =
       await response.json();
 
+
     if (!response.ok) {
-      result.innerHTML = `
+
+      result.textContent =
+        data.error ||
+        (
+          currentLanguage === "ru"
+            ? "Не удалось создать заказ."
+            : "Sargyt döredilmedi."
+        );
+
+      return;
+    }
+
+
+    result.innerHTML = `
+      <div class="notice">
+        ${
+          currentLanguage === "ru"
+            ? `Заказ №${data.order_id} оформлен. Сумма: ${money(data.total)}.`
+            : `№${data.order_id} sargyt kabul edildi. Jemi: ${money(data.total)}.`
+        }
+      </div>
+    `;
+
+
+    if (!data.telegram_sent) {
+
+      result.innerHTML += `
         <div class="notice">
+          ${
+            currentLanguage === "ru"
+              ? "Заказ сохранён, но уведомление владельцу пока не отправлено."
+              : "Sargyt saklandy, emma eýesine habar iberilmedi."
+          }
+        </div>
+      `;
+    }
+
+
+    cart = [];
+
+    renderCart();
+
+    hideCheckout();
+
+  } catch (error) {
+
+    result.textContent =
+      currentLanguage === "ru"
+        ? "Ошибка соединения с сервером."
+        : "Serwer bilen baglanyşykda säwlik.";
+  }
+}
+
+
+// ---------------------------------------------------------
+// ADMIN AUTH
+// ---------------------------------------------------------
+
+async function checkAdmin() {
+
+  try {
+
+    const response =
+      await apiFetch(
+        "/api/admin/check"
+      );
+
+    const data =
+      await response.json();
+
+    isOwner =
+      Boolean(data.admin);
+
+
+    if (data.user) {
+
+      const user =
+        data.user;
+
+      const fullName = [
+        user.first_name,
+        user.last_name
+      ]
+        .filter(Boolean)
+        .join(" ");
+
+      document.getElementById(
+        "profileName"
+      ).textContent =
+        fullName ||
+        user.username ||
+        "Пользователь";
+    }
+
+
+    if (isOwner) {
+
+      document
+        .getElementById(
+          "adminPanel"
+        )
+        .classList.add(
+          "visible"
+        );
+
+      document
+        .getElementById(
+          "adminBadge"
+        )
+        .classList.remove(
+          "hidden"
+        );
+
+      document.getElementById(
+        "profileStatus"
+      ).textContent =
+        currentLanguage === "ru"
+          ? "Доступ владельца подтверждён."
+          : "Eýe ygtyýary tassyklandy.";
+
+      loadOrders("active");
+
+    } else {
+
+      document.getElementById(
+        "profileStatus"
+      ).textContent =
+        currentLanguage === "ru"
+          ? "Обычный пользователь."
+          : "Adaty ulanyjy.";
+    }
+
+  } catch (error) {
+
+    isOwner = false;
+
+  }
+}
+
+
+// ---------------------------------------------------------
+// ADMIN TABS
+// ---------------------------------------------------------
+
+function showAdminTab(tab) {
+
+  if (!isOwner) return;
+
+  currentAdminTab = tab;
+
+  document
+    .getElementById(
+      "adminOrders"
+    )
+    .classList.toggle(
+      "hidden",
+      tab !== "orders"
+    );
+
+  document
+    .getElementById(
+      "adminProducts"
+    )
+    .classList.toggle(
+      "hidden",
+      tab !== "products"
+    );
+
+  document
+    .getElementById(
+      "ordersTab"
+    )
+    .classList.toggle(
+      "active",
+      tab === "orders"
+    );
+
+  document
+    .getElementById(
+      "productsTab"
+    )
+    .classList.toggle(
+      "active",
+      tab === "products"
+    );
+
+  if (tab === "products") {
+    renderAdminProducts();
+  }
+}
+
+
+// ---------------------------------------------------------
+// ADMIN ORDERS
+// ---------------------------------------------------------
+
+async function loadOrders(
+  view = "active"
+) {
+
+  if (!isOwner) return;
+
+  currentOrderView = view;
+
+  const root =
+    document.getElementById(
+      "ordersList"
+    );
+
+  root.innerHTML =
+    currentLanguage === "ru"
+      ? "Загрузка заказов..."
+      : "Sargytlar ýüklenýär...";
+
+
+  try {
+
+    const response =
+      await apiFetch(
+        `/api/orders?view=${encodeURIComponent(view)}`
+      );
+
+    const data =
+      await response.json();
+
+
+    if (!response.ok) {
+
+      root.innerHTML = `
+        <div class="empty">
           ${escapeHtml(
             data.error ||
-            "Не удалось создать заказ."
+            "Ошибка"
           )}
         </div>
       `;
@@ -811,459 +1115,290 @@ async function submitOrder() {
       return;
     }
 
-    result.innerHTML = `
-      <div class="notice">
-        Заказ №${data.order_id}
-        успешно оформлен.
-        Сумма:
-        ${money(data.total)}.
-      </div>
-    `;
 
-    if (!data.telegram_sent) {
-      result.innerHTML += `
-        <div
-          class="notice"
-          style="background:#faf3e8"
-        >
-          Заказ сохранён, но уведомление
-          Telegram пока не отправлено.
+    const orders =
+      data.orders || [];
+
+
+    if (!orders.length) {
+
+      root.innerHTML = `
+        <div class="empty">
+          ${
+            view === "archive"
+              ? (
+                  currentLanguage === "ru"
+                    ? "Архив пока пуст."
+                    : "Arhiw häzirlikçe boş."
+                )
+              : (
+                  currentLanguage === "ru"
+                    ? "Активных заказов нет."
+                    : "Işjeň sargyt ýok."
+                )
+          }
         </div>
       `;
+
+      return;
     }
 
-    cart = [];
 
-    renderCart();
-
-    showToast(
-      `Заказ №${data.order_id} создан`
-    );
+    root.innerHTML =
+      orders.map(renderOrder)
+        .join("");
 
   } catch (error) {
 
-    result.innerHTML = `
-      <div class="notice">
-        Ошибка соединения с сервером.
-      </div>
-    `;
-  }
-}
-
-
-/* =========================================================
-   ADMIN
-========================================================= */
-
-async function checkAdmin() {
-  if (!tg) {
-    return;
-  }
-
-  const initData =
-    tg.initData || "";
-
-  if (!initData) {
-    return;
-  }
-
-  try {
-
-    const response =
-      await fetch(
-        "/api/admin/check",
-        {
-          headers: {
-            "X-Telegram-Init-Data":
-              initData
-          }
-        }
-      );
-
-    const data =
-      await response.json();
-
-    adminMode =
-      Boolean(data.admin);
-
-    if (adminMode) {
-      document
-        .getElementById(
-          "adminPanel"
-        )
-        .classList.remove(
-          "hidden"
-        );
-
-      const user =
-        tg.initDataUnsafe &&
-        tg.initDataUnsafe.user;
-
-      if (user) {
-        document.getElementById(
-          "profileInfo"
-        ).innerHTML = `
-          <h2>
-            ${escapeHtml(
-              user.first_name ||
-              "Владелец"
-            )}
-          </h2>
-
-          <div class="muted">
-            Панель владельца Greenleaf
-          </div>
-        `;
-      }
-
-      await loadOrders(
-        "active"
-      );
-    }
-
-  } catch (error) {
-    adminMode = false;
-  }
-}
-
-
-function adminHeaders() {
-  const headers = {};
-
-  if (tg && tg.initData) {
-    headers[
-      "X-Telegram-Init-Data"
-    ] = tg.initData;
-  }
-
-  return headers;
-}
-
-
-function showAdminSection(section) {
-  if (!adminMode) {
-    return;
-  }
-
-  currentAdminSection =
-    section;
-
-  document
-    .getElementById(
-      "adminOrdersSection"
-    )
-    .classList.toggle(
-      "hidden",
-      section !== "orders"
-    );
-
-  document
-    .getElementById(
-      "adminProductsSection"
-    )
-    .classList.toggle(
-      "hidden",
-      section !== "products"
-    );
-
-  document
-    .getElementById(
-      "adminReviewsSection"
-    )
-    .classList.toggle(
-      "hidden",
-      section !== "reviews"
-    );
-
-  document
-    .getElementById(
-      "adminOrdersTab"
-    )
-    .classList.toggle(
-      "active",
-      section === "orders"
-    );
-
-  document
-    .getElementById(
-      "adminProductsTab"
-    )
-    .classList.toggle(
-      "active",
-      section === "products"
-    );
-
-  document
-    .getElementById(
-      "adminReviewsTab"
-    )
-    .classList.toggle(
-      "active",
-      section === "reviews"
-    );
-
-  if (section === "orders") {
-    loadOrders(
-      currentOrderView
-    );
-  }
-
-  if (section === "products") {
-    renderAdminProducts();
-  }
-
-  if (section === "reviews") {
-    renderAdminReviews();
-  }
-}
-
-
-/* =========================================================
-   ADMIN ORDERS
-========================================================= */
-
-async function loadOrders(view) {
-  if (!adminMode) {
-    return;
-  }
-
-  currentOrderView = view;
-
-  document
-    .getElementById(
-      "activeOrdersTab"
-    )
-    .classList.toggle(
-      "active",
-      view === "active"
-    );
-
-  document
-    .getElementById(
-      "archiveOrdersTab"
-    )
-    .classList.toggle(
-      "active",
-      view === "archive"
-    );
-
-  const root =
-    document.getElementById(
-      "ordersList"
-    );
-
-  root.innerHTML = `
-    <div class="empty">
-      Загрузка...
-    </div>
-  `;
-
-  try {
-
-    const response =
-      await fetch(
-        `/api/orders?view=${view}`,
-        {
-          headers:
-            adminHeaders()
-        }
-      );
-
-    const data =
-      await response.json();
-
-    if (!response.ok) {
-      throw new Error(
-        data.error ||
-        "Ошибка"
-      );
-    }
-
-    renderOrders(
-      data.orders || []
-    );
-
-  } catch (error) {
-
-    root.innerHTML = `
-      <div class="empty">
-        ${escapeHtml(
-          error.message ||
-          "Не удалось загрузить заказы."
-        )}
-      </div>
-    `;
-  }
-}
-
-
-function renderOrders(orders) {
-  const root =
-    document.getElementById(
-      "ordersList"
-    );
-
-  if (!orders.length) {
     root.innerHTML = `
       <div class="empty">
         ${
-          currentOrderView === "archive"
-            ? "Архив пока пуст."
-            : "Активных заказов нет."
+          currentLanguage === "ru"
+            ? "Не удалось загрузить заказы."
+            : "Sargytlary ýükläp bolmady."
         }
       </div>
     `;
-
-    return;
   }
-
-  root.innerHTML = orders
-    .map(order => {
-
-      const items =
-        Array.isArray(
-          order.items
-        )
-          ? order.items
-          : [];
-
-      return `
-        <div class="order">
-
-          <div class="row">
-
-            <div>
-              <div class="order-number">
-                Заказ №${order.id}
-              </div>
-
-              <div class="order-meta">
-                ${escapeHtml(
-                  order.customer_name
-                )}
-                ·
-                ${escapeHtml(
-                  order.phone || ""
-                )}
-              </div>
-            </div>
-
-            <strong>
-              ${money(order.total)}
-            </strong>
-
-          </div>
-
-          <div class="order-meta">
-            Город:
-            ${escapeHtml(
-              order.city || "—"
-            )}
-            <br>
-
-            Получение:
-            ${escapeHtml(
-              order.delivery_method || "—"
-            )}
-            <br>
-
-            Адрес:
-            ${escapeHtml(
-              order.address || "—"
-            )}
-          </div>
-
-          <div class="order-items">
-
-            ${items
-              .map(item => `
-                <div>
-                  ${escapeHtml(
-                    item.name
-                  )}
-                  × ${item.quantity}
-                  —
-                  ${money(
-                    item.line_total
-                  )}
-                </div>
-              `)
-              .join("")}
-
-          </div>
-
-          <div class="order-meta">
-            Комментарий:
-            ${escapeHtml(
-              order.comment || "нет"
-            )}
-          </div>
-
-          <div
-            class="order-actions"
-            style="margin-top:12px"
-          >
-
-            <select
-              onchange="changeOrderStatus(
-                ${order.id},
-                this.value
-              )"
-            >
-
-              ${statusOption(
-                "new",
-                order.status,
-                "Новый"
-              )}
-
-              ${statusOption(
-                "processing",
-                order.status,
-                "В обработке"
-              )}
-
-              ${statusOption(
-                "ready",
-                order.status,
-                "Готов"
-              )}
-
-              ${statusOption(
-                "completed",
-                order.status,
-                "Завершён"
-              )}
-
-              ${statusOption(
-                "cancelled",
-                order.status,
-                "Отменён"
-              )}
-
-            </select>
-
-          </div>
-
-        </div>
-      `;
-    })
-    .join("");
 }
 
 
-function statusOption(
-  value,
-  current,
-  label
-) {
+function renderOrder(order) {
+
+  const items =
+    Array.isArray(order.items)
+      ? order.items
+      : [];
+
+
+  const itemsHtml =
+    items.map(item => `
+      <div>
+        ${escapeHtml(
+          item.name
+        )}
+        × ${item.quantity}
+        — ${money(
+          item.line_total
+        )}
+      </div>
+    `).join("");
+
+
+  const statusText = {
+    new:
+      currentLanguage === "ru"
+        ? "Новый"
+        : "Täze",
+
+    processing:
+      currentLanguage === "ru"
+        ? "В работе"
+        : "Işlenýär",
+
+    ready:
+      currentLanguage === "ru"
+        ? "Готов"
+        : "Taýýar",
+
+    completed:
+      currentLanguage === "ru"
+        ? "Завершён"
+        : "Tamamlandy",
+
+    cancelled:
+      currentLanguage === "ru"
+        ? "Отменён"
+        : "Ýatyryldy"
+  };
+
+
   return `
-    <option
-      value="${value}"
-      ${value === current ? "selected" : ""}
-    >
-      ${label}
-    </option>
+    <div class="order">
+
+      <div class="order-top">
+
+        <div>
+          <div class="order-id">
+            №${order.id}
+          </div>
+
+          <div style="
+            color:#747a76;
+            font-size:13px;
+            margin-top:4px;
+          ">
+            ${escapeHtml(
+              order.customer_name
+            )}
+          </div>
+        </div>
+
+        <div class="status">
+          ${
+            statusText[
+              order.status
+            ] ||
+            order.status
+          }
+        </div>
+
+      </div>
+
+
+      <div style="
+        line-height:1.7;
+        font-size:14px;
+      ">
+
+        <div>
+          ${
+            escapeHtml(
+              order.phone ||
+              (
+                currentLanguage === "ru"
+                  ? "Телефон не указан"
+                  : "Telefon görkezilmedi"
+              )
+            )
+          }
+        </div>
+
+        <div>
+          ${
+            escapeHtml(
+              order.city || ""
+            )
+          }
+        </div>
+
+        <div>
+          ${
+            escapeHtml(
+              order.delivery_method
+            )
+          }
+        </div>
+
+        <div>
+          ${
+            escapeHtml(
+              order.address || ""
+            )
+          }
+        </div>
+
+      </div>
+
+
+      <div class="order-items">
+        ${itemsHtml}
+      </div>
+
+
+      <div style="
+        font-weight:700;
+        font-size:19px;
+        margin:12px 0;
+      ">
+        ${money(order.total)}
+      </div>
+
+
+      ${
+        order.comment
+          ? `
+            <div style="
+              color:#747a76;
+              font-size:13px;
+              margin-bottom:12px;
+            ">
+              ${escapeHtml(
+                order.comment
+              )}
+            </div>
+          `
+          : ""
+      }
+
+
+      ${
+        currentOrderView === "active"
+          ? `
+            <select
+              onchange="
+                changeOrderStatus(
+                  ${order.id},
+                  this.value
+                )
+              "
+            >
+
+              <option
+                value="new"
+                ${order.status === "new"
+                  ? "selected"
+                  : ""}
+              >
+                ${
+                  currentLanguage === "ru"
+                    ? "Новый"
+                    : "Täze"
+                }
+              </option>
+
+              <option
+                value="processing"
+                ${order.status === "processing"
+                  ? "selected"
+                  : ""}
+              >
+                ${
+                  currentLanguage === "ru"
+                    ? "В работе"
+                    : "Işlenýär"
+                }
+              </option>
+
+              <option
+                value="ready"
+                ${order.status === "ready"
+                  ? "selected"
+                  : ""}
+              >
+                ${
+                  currentLanguage === "ru"
+                    ? "Готов"
+                    : "Taýýar"
+                }
+              </option>
+
+              <option
+                value="completed"
+              >
+                ${
+                  currentLanguage === "ru"
+                    ? "Завершён"
+                    : "Tamamlandy"
+                }
+              </option>
+
+              <option
+                value="cancelled"
+              >
+                ${
+                  currentLanguage === "ru"
+                    ? "Отменён"
+                    : "Ýatyryldy"
+                }
+              </option>
+
+            </select>
+          `
+          : ""
+      }
+
+    </div>
   `;
 }
 
@@ -1272,38 +1407,39 @@ async function changeOrderStatus(
   orderId,
   status
 ) {
+
   try {
 
     const response =
-      await fetch(
+      await apiFetch(
         `/api/orders/${orderId}/status`,
         {
-          method: "PATCH",
-          headers: {
+          method:"PATCH",
+          headers:{
             "Content-Type":
-              "application/json",
-            ...adminHeaders()
+              "application/json"
           },
-          body:
-            JSON.stringify({
-              status
-            })
+          body:JSON.stringify({
+            status
+          })
         }
       );
+
 
     const data =
       await response.json();
 
+
     if (!response.ok) {
-      throw new Error(
+
+      alert(
         data.error ||
-        "Не удалось изменить статус."
+        "Ошибка"
       );
+
+      return;
     }
 
-    showToast(
-      "Статус заказа обновлён"
-    );
 
     await loadOrders(
       currentOrderView
@@ -1311,119 +1447,141 @@ async function changeOrderStatus(
 
   } catch (error) {
 
-    showToast(
-      error.message
+    alert(
+      currentLanguage === "ru"
+        ? "Ошибка соединения."
+        : "Baglanyşyk säwligi."
     );
   }
 }
 
 
-/* =========================================================
-   ADMIN PRODUCTS
-========================================================= */
+// ---------------------------------------------------------
+// ADMIN PRODUCTS
+// ---------------------------------------------------------
 
 function renderAdminProducts() {
+
+  if (!isOwner) return;
+
   const root =
     document.getElementById(
-      "adminProductsList"
+      "adminProductList"
     );
 
-  if (!root) {
-    return;
-  }
-
   if (!products.length) {
+
     root.innerHTML = `
       <div class="empty">
-        Товаров пока нет.
+        ${
+          currentLanguage === "ru"
+            ? "Товаров пока нет."
+            : "Häzirlikçe önüm ýok."
+        }
       </div>
     `;
 
     return;
   }
 
-  root.innerHTML = `
-    <h3>
-      Каталог
-    </h3>
 
-    ${products.map(product => `
-      <div class="admin-product">
+  root.innerHTML =
+    products.map(product => `
 
-        <div class="admin-thumb">
+      <div class="admin-box">
+
+        <div class="admin-product">
 
           ${
             product.image_url
               ? `
                 <img
+                  class="admin-thumb"
                   src="${escapeHtml(
                     product.image_url
                   )}"
-                  alt=""
                 >
               `
-              : ""
+              : `
+                <div class="admin-thumb"></div>
+              `
           }
+
+          <div>
+
+            <div style="
+              font-weight:700;
+            ">
+              ${escapeHtml(
+                product.name
+              )}
+            </div>
+
+            <div style="
+              color:#747a76;
+              margin-top:4px;
+              font-size:13px;
+            ">
+              ${money(
+                product.price
+              )}
+            </div>
+
+          </div>
 
         </div>
 
-        <div class="admin-product-main">
 
-          <div class="admin-product-name">
-            ${escapeHtml(
-              product.name
-            )}
-          </div>
+        <div
+          class="admin-actions"
+          style="
+            margin-top:10px;
+          "
+        >
 
-          <div class="admin-product-price">
-            ${money(product.price)}
-            ${
-              product.category
-                ? " · " +
-                  escapeHtml(
-                    product.category
-                  )
-                : ""
-            }
-          </div>
-
-          <div
-            class="admin-product-actions"
+          <button
+            onclick="
+              editProduct(
+                ${product.id}
+              )
+            "
           >
+            ${
+              currentLanguage === "ru"
+                ? "Изменить"
+                : "Üýtget"
+            }
+          </button>
 
-            <button
-              class="secondary"
-              onclick="editProduct(
+          <button
+            onclick="
+              deleteProduct(
                 ${product.id}
-              )"
-            >
-              Изменить
-            </button>
-
-            <button
-              class="danger"
-              onclick="removeProduct(
-                ${product.id}
-              )"
-            >
-              Удалить
-            </button>
-
-          </div>
+              )
+            "
+            style="
+              color:#9f3030;
+            "
+          >
+            ${
+              currentLanguage === "ru"
+                ? "Удалить"
+                : "Öçür"
+            }
+          </button>
 
         </div>
 
       </div>
-    `).join("")}
-  `;
+
+    `).join("");
 }
 
 
 function resetProductForm() {
-  editingProductId = null;
 
   document.getElementById(
-    "editProductId"
+    "editingProductId"
   ).value = "";
 
   document.getElementById(
@@ -1449,36 +1607,35 @@ function resetProductForm() {
   document.getElementById(
     "productFormTitle"
   ).textContent =
-    "Новый товар";
+    currentLanguage === "ru"
+      ? "Добавить товар"
+      : "Önüm goş";
 
   document.getElementById(
     "productFormResult"
-  ).textContent = "";
+  ).innerHTML = "";
 }
 
 
-function editProduct(productId) {
+function editProduct(id) {
+
   const product =
     products.find(
-      p => p.id === productId
+      p => p.id === id
     );
 
-  if (!product) {
-    return;
-  }
+  if (!product) return;
 
-  editingProductId =
-    productId;
 
   document.getElementById(
-    "editProductId"
+    "editingProductId"
   ).value =
-    productId;
+    product.id;
 
   document.getElementById(
     "productName"
   ).value =
-    product.name || "";
+    product.name;
 
   document.getElementById(
     "productCategory"
@@ -1488,7 +1645,7 @@ function editProduct(productId) {
   document.getElementById(
     "productPrice"
   ).value =
-    product.price || "";
+    product.price;
 
   document.getElementById(
     "productDescription"
@@ -1502,24 +1659,42 @@ function editProduct(productId) {
   document.getElementById(
     "productFormTitle"
   ).textContent =
-    "Редактирование товара";
+    currentLanguage === "ru"
+      ? "Изменить товар"
+      : "Önümi üýtget";
 
-  document
-    .getElementById(
-      "adminProductsSection"
-    )
-    .scrollIntoView({
-      behavior: "smooth"
-    });
+
+  window.scrollTo({
+    top:0,
+    behavior:"smooth"
+  });
 }
 
+
+// ---------------------------------------------------------
+// IMAGE COMPRESSION
+// ---------------------------------------------------------
 
 async function compressImage(
   file
 ) {
+
   if (!file) {
     return null;
   }
+
+  if (
+    !file.type.startsWith(
+      "image/"
+    )
+  ) {
+    throw new Error(
+      currentLanguage === "ru"
+        ? "Выберите изображение."
+        : "Surat saýlaň."
+    );
+  }
+
 
   const image =
     await new Promise(
@@ -1528,11 +1703,15 @@ async function compressImage(
         const img =
           new Image();
 
-        img.onload =
-          () => resolve(img);
+        img.onload = () =>
+          resolve(img);
 
-        img.onerror =
-          reject;
+        img.onerror = () =>
+          reject(
+            new Error(
+              "IMAGE_ERROR"
+            )
+          );
 
         img.src =
           URL.createObjectURL(
@@ -1540,6 +1719,7 @@ async function compressImage(
           );
       }
     );
+
 
   const maxSide = 1600;
 
@@ -1549,12 +1729,13 @@ async function compressImage(
   let height =
     image.naturalHeight;
 
+
   if (
     width > maxSide ||
     height > maxSide
   ) {
 
-    const ratio =
+    const scale =
       Math.min(
         maxSide / width,
         maxSide / height
@@ -1562,38 +1743,38 @@ async function compressImage(
 
     width =
       Math.round(
-        width * ratio
+        width * scale
       );
 
     height =
       Math.round(
-        height * ratio
+        height * scale
       );
   }
+
 
   const canvas =
     document.createElement(
       "canvas"
     );
 
-  canvas.width =
-    width;
+  canvas.width = width;
+  canvas.height = height;
 
-  canvas.height =
-    height;
 
-  const ctx =
+  const context =
     canvas.getContext(
       "2d"
     );
 
-  ctx.drawImage(
+  context.drawImage(
     image,
     0,
     0,
     width,
     height
   );
+
 
   const blob =
     await new Promise(
@@ -1605,21 +1786,27 @@ async function compressImage(
         )
     );
 
+
   return new File(
     [blob],
     "product.jpg",
     {
-      type:
-        "image/jpeg"
+      type:"image/jpeg"
     }
   );
 }
 
 
+// ---------------------------------------------------------
+// SAVE PRODUCT
+// ---------------------------------------------------------
+
 async function saveProduct() {
-  if (!adminMode) {
+
+  if (!isOwner) {
     return;
   }
+
 
   const name =
     document.getElementById(
@@ -1641,69 +1828,23 @@ async function saveProduct() {
       "productDescription"
     ).value.trim();
 
-  const imageInput =
+  const editingId =
     document.getElementById(
-      "productImage"
-    );
+      "editingProductId"
+    ).value;
 
-  if (!name || price === "") {
-    showToast(
-      "Введите название и цену"
+
+  if (!name || !price) {
+
+    alert(
+      currentLanguage === "ru"
+        ? "Заполните название и цену."
+        : "Adyny we bahany dolduryň."
     );
 
     return;
   }
 
-  const form =
-    new FormData();
-
-  form.append(
-    "name",
-    name
-  );
-
-  form.append(
-    "category",
-    category
-  );
-
-  form.append(
-    "price",
-    price
-  );
-
-  form.append(
-    "description",
-    description
-  );
-
-  if (
-    imageInput.files &&
-    imageInput.files[0]
-  ) {
-
-    const compressed =
-      await compressImage(
-        imageInput.files[0]
-      );
-
-    if (compressed) {
-      form.append(
-        "image",
-        compressed
-      );
-    }
-  }
-
-  const method =
-    editingProductId
-      ? "PUT"
-      : "POST";
-
-  const url =
-    editingProductId
-      ? `/api/products/${editingProductId}`
-      : "/api/products";
 
   const result =
     document.getElementById(
@@ -1711,471 +1852,204 @@ async function saveProduct() {
     );
 
   result.textContent =
-    "Сохраняем...";
+    currentLanguage === "ru"
+      ? "Сохраняем..."
+      : "Ýatda saklanýar...";
+
 
   try {
 
+    const formData =
+      new FormData();
+
+    formData.append(
+      "name",
+      name
+    );
+
+    formData.append(
+      "category",
+      category
+    );
+
+    formData.append(
+      "price",
+      price
+    );
+
+    formData.append(
+      "description",
+      description
+    );
+
+
+    const file =
+      document.getElementById(
+        "productImage"
+      ).files[0];
+
+
+    if (file) {
+
+      const compressed =
+        await compressImage(
+          file
+        );
+
+      formData.append(
+        "image",
+        compressed
+      );
+    }
+
+
+    const url =
+      editingId
+        ? `/api/products/${editingId}`
+        : "/api/products";
+
+
+    const method =
+      editingId
+        ? "PUT"
+        : "POST";
+
+
     const response =
-      await fetch(
+      await apiFetch(
         url,
         {
           method,
-          headers:
-            adminHeaders(),
-          body: form
+          body:formData
         }
       );
+
 
     const data =
       await response.json();
 
+
     if (!response.ok) {
-      throw new Error(
+
+      result.textContent =
         data.error ||
-        "Не удалось сохранить товар."
-      );
+        (
+          currentLanguage === "ru"
+            ? "Не удалось сохранить товар."
+            : "Önümi saklap bolmady."
+        );
+
+      return;
     }
 
-    result.textContent =
-      "Товар сохранён.";
+
+    result.innerHTML = `
+      <div class="notice">
+        ${
+          currentLanguage === "ru"
+            ? "Товар сохранён."
+            : "Önüm saklandy."
+        }
+      </div>
+    `;
+
 
     resetProductForm();
 
     await loadProducts();
 
-    showToast(
-      "Товар сохранён"
-    );
-
   } catch (error) {
 
     result.textContent =
-      error.message;
+      error.message ||
+      (
+        currentLanguage === "ru"
+          ? "Ошибка сохранения."
+          : "Saklamakda säwlik."
+      );
   }
 }
 
 
-async function removeProduct(
-  productId
-) {
-  if (!adminMode) {
-    return;
-  }
+// ---------------------------------------------------------
+// DELETE PRODUCT
+// ---------------------------------------------------------
 
-  const product =
-    products.find(
-      p => p.id === productId
-    );
+async function deleteProduct(id) {
 
-  if (!product) {
-    return;
-  }
+  if (!isOwner) return;
+
 
   const confirmed =
     confirm(
-      `Удалить товар «${product.name}»?`
+      currentLanguage === "ru"
+        ? "Удалить этот товар?"
+        : "Bu önümi öçürmelimi?"
     );
+
 
   if (!confirmed) {
     return;
   }
 
-  try {
-
-    const response =
-      await fetch(
-        `/api/products/${productId}`,
-        {
-          method: "DELETE",
-          headers:
-            adminHeaders()
-        }
-      );
-
-    const data =
-      await response.json();
-
-    if (!response.ok) {
-      throw new Error(
-        data.error ||
-        "Не удалось удалить товар."
-      );
-    }
-
-    cart =
-      cart.filter(
-        item =>
-          item.id !== productId
-      );
-
-    await loadProducts();
-
-    renderCart();
-
-    showToast(
-      "Товар удалён"
-    );
-
-  } catch (error) {
-
-    showToast(
-      error.message
-    );
-  }
-}
-
-
-/* =========================================================
-   ADMIN REVIEWS
-========================================================= */
-
-function renderReviewProductSelect() {
-  const select =
-    document.getElementById(
-      "reviewProduct"
-    );
-
-  if (!select) {
-    return;
-  }
-
-  select.innerHTML =
-    products.map(product => `
-      <option value="${product.id}">
-        ${escapeHtml(
-          product.name
-        )}
-      </option>
-    `).join("");
-}
-
-
-function renderAdminReviews() {
-  const root =
-    document.getElementById(
-      "adminReviewsList"
-    );
-
-  if (!root) {
-    return;
-  }
-
-  const reviews =
-    products.flatMap(
-      product =>
-        (product.reviews || [])
-          .map(review => ({
-            ...review,
-            productName:
-              product.name
-          }))
-    );
-
-  if (!reviews.length) {
-    root.innerHTML = `
-      <div class="empty">
-        Отзывов пока нет.
-      </div>
-    `;
-
-    return;
-  }
-
-  root.innerHTML = `
-    <h3>
-      Отзывы
-    </h3>
-
-    ${reviews.map(review => `
-      <div class="review">
-
-        <div class="row">
-
-          <div>
-            <div class="review-author">
-              ${escapeHtml(
-                review.author
-              )}
-            </div>
-
-            <div class="muted">
-              ${escapeHtml(
-                review.productName
-              )}
-            </div>
-          </div>
-
-          <button
-            class="danger"
-            onclick="removeReview(
-              ${review.id}
-            )"
-          >
-            Удалить
-          </button>
-
-        </div>
-
-        <div class="review-stars">
-          ${"•".repeat(
-            Number(review.rating)
-          )}
-        </div>
-
-        <div class="review-text">
-          ${escapeHtml(
-            review.text
-          )}
-        </div>
-
-      </div>
-    `).join("")}
-  `;
-}
-
-
-async function saveReview() {
-  const productId =
-    document.getElementById(
-      "reviewProduct"
-    ).value;
-
-  const author =
-    document.getElementById(
-      "reviewAuthor"
-    ).value.trim();
-
-  const rating =
-    document.getElementById(
-      "reviewRating"
-    ).value;
-
-  const text =
-    document.getElementById(
-      "reviewText"
-    ).value.trim();
-
-  if (!author || !text) {
-    showToast(
-      "Заполните автора и текст"
-    );
-
-    return;
-  }
 
   try {
 
     const response =
-      await fetch(
-        "/api/reviews",
+      await apiFetch(
+        `/api/products/${id}`,
         {
-          method: "POST",
-          headers: {
-            "Content-Type":
-              "application/json",
-            ...adminHeaders()
-          },
-          body:
-            JSON.stringify({
-              product_id:
-                Number(productId),
-              author,
-              rating:
-                Number(rating),
-              text
-            })
+          method:"DELETE"
         }
       );
+
 
     const data =
       await response.json();
 
+
     if (!response.ok) {
-      throw new Error(
+
+      alert(
         data.error ||
-        "Не удалось добавить отзыв."
+        "Ошибка"
       );
+
+      return;
     }
 
-    document.getElementById(
-      "reviewAuthor"
-    ).value = "";
-
-    document.getElementById(
-      "reviewText"
-    ).value = "";
 
     await loadProducts();
 
-    showToast(
-      "Отзыв добавлен"
-    );
-
   } catch (error) {
 
-    showToast(
-      error.message
+    alert(
+      currentLanguage === "ru"
+        ? "Ошибка соединения."
+        : "Baglanyşyk säwligi."
     );
   }
 }
 
 
-async function removeReview(
-  reviewId
-) {
-  if (!adminMode) {
-    return;
-  }
+// ---------------------------------------------------------
+// INIT
+// ---------------------------------------------------------
 
-  if (
-    !confirm(
-      "Удалить этот отзыв?"
-    )
-  ) {
-    return;
-  }
+async function init() {
 
-  try {
+  setupTelegram();
 
-    const response =
-      await fetch(
-        `/api/reviews/${reviewId}`,
-        {
-          method: "DELETE",
-          headers:
-            adminHeaders()
-        }
-      );
-
-    const data =
-      await response.json();
-
-    if (!response.ok) {
-      throw new Error(
-        data.error ||
-        "Не удалось удалить отзыв."
-      );
-    }
-
-    await loadProducts();
-
-    showToast(
-      "Отзыв удалён"
-    );
-
-  } catch (error) {
-
-    showToast(
-      error.message
-    );
-  }
-}
-
-
-/* =========================================================
-   HELPERS
-========================================================= */
-
-function money(value) {
-  return (
-    Number(value)
-      .toLocaleString("ru-RU") +
-    " TMT"
-  );
-}
-
-
-function plural(number) {
-  const n =
-    Math.abs(number) % 100;
-
-  const n1 =
-    n % 10;
-
-  if (
-    n > 10 &&
-    n < 20
-  ) {
-    return "ов";
-  }
-
-  if (n1 === 1) {
-    return "";
-  }
-
-  if (
-    n1 >= 2 &&
-    n1 <= 4
-  ) {
-    return "а";
-  }
-
-  return "ов";
-}
-
-
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll(
-      "&",
-      "&amp;"
-    )
-    .replaceAll(
-      "<",
-      "&lt;"
-    )
-    .replaceAll(
-      ">",
-      "&gt;"
-    )
-    .replaceAll(
-      '"',
-      "&quot;"
-    )
-    .replaceAll(
-      "'",
-      "&#039;"
-    );
-}
-
-
-function escapeJs(value) {
-  return String(value)
-    .replaceAll(
-      "\\",
-      "\\\\"
-    )
-    .replaceAll(
-      "'",
-      "\\'"
-    );
-}
-
-
-function showToast(message) {
-  const toast =
-    document.getElementById(
-      "toast"
-    );
-
-  toast.textContent =
-    message;
-
-  toast.classList.add(
-    "show"
+  setLanguage(
+    currentLanguage
   );
 
-  clearTimeout(
-    window.toastTimer
-  );
+  await loadProducts();
 
-  window.toastTimer =
-    setTimeout(
-      () => {
-        toast.classList.remove(
-          "show"
-        );
-      },
-      2200
-    );
+  await checkAdmin();
+
+  updatePlaceholders();
 }
+
+
+init();
