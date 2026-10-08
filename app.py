@@ -3,6 +3,7 @@ import json
 import time
 import hmac
 import hashlib
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import parse_qsl
@@ -11,6 +12,7 @@ import requests
 import psycopg2
 from psycopg2.extras import RealDictCursor, Json
 from flask import Flask, jsonify, request, send_from_directory
+from vercel.blob import BlobClient
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -18,37 +20,9 @@ BASE_DIR = Path(__file__).resolve().parent
 app = Flask(__name__, static_folder="static")
 
 
-DEFAULT_PRODUCTS = [
-    {
-        "id": 1,
-        "name": "Шуба",
-        "description": "Тестовый товар Greenleaf",
-        "price": 600,
-    },
-    {
-        "id": 2,
-        "name": "Пальто",
-        "description": "Тестовый товар Greenleaf",
-        "price": 450,
-    },
-    {
-        "id": 3,
-        "name": "Пиджак",
-        "description": "Тестовый товар Greenleaf",
-        "price": 350,
-    },
-]
-
-
-ORDER_STATUSES = {
-    "new": "Новый",
-    "accepted": "Принят",
-    "packing": "Собирается",
-    "delivery": "Передан в доставку",
-    "completed": "Завершён",
-    "cancelled": "Отменён",
-}
-
+# =========================================================
+# DATABASE
+# =========================================================
 
 def db():
     database_url = os.environ.get("DATABASE_URL", "").strip()
@@ -67,13 +41,26 @@ def init_db():
 
     try:
         with conn.cursor() as cur:
+
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS products (
                     id SERIAL PRIMARY KEY,
                     name TEXT NOT NULL,
                     description TEXT DEFAULT '',
-                    price NUMERIC(12,2) NOT NULL
+                    price NUMERIC(12,2) NOT NULL,
+                    category TEXT DEFAULT '',
+                    image_url TEXT DEFAULT ''
                 )
+            """)
+
+            cur.execute("""
+                ALTER TABLE products
+                ADD COLUMN IF NOT EXISTS category TEXT DEFAULT ''
+            """)
+
+            cur.execute("""
+                ALTER TABLE products
+                ADD COLUMN IF NOT EXISTS image_url TEXT DEFAULT ''
             """)
 
             cur.execute("""
@@ -92,31 +79,19 @@ def init_db():
                 )
             """)
 
-            cur.execute("SELECT COUNT(*) FROM products")
-            count = cur.fetchone()[0]
-
-            if count == 0:
-                for product in DEFAULT_PRODUCTS:
-                    cur.execute(
-                        """
-                        INSERT INTO products
-                        (id, name, description, price)
-                        VALUES (%s, %s, %s, %s)
-                        """,
-                        (
-                            product["id"],
-                            product["name"],
-                            product["description"],
-                            product["price"],
-                        ),
-                    )
-
-                cur.execute("""
-                    SELECT setval(
-                        pg_get_serial_sequence('products', 'id'),
-                        COALESCE((SELECT MAX(id) FROM products), 1)
-                    )
-                """)
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS reviews (
+                    id SERIAL PRIMARY KEY,
+                    product_id INTEGER NOT NULL
+                        REFERENCES products(id)
+                        ON DELETE CASCADE,
+                    author TEXT NOT NULL,
+                    rating INTEGER NOT NULL
+                        CHECK (rating BETWEEN 1 AND 5),
+                    text TEXT NOT NULL,
+                    created_at TIMESTAMPTZ NOT NULL
+                )
+            """)
 
         conn.commit()
 
@@ -124,88 +99,28 @@ def init_db():
         conn.close()
 
 
-def products():
-    conn = db()
+# =========================================================
+# TELEGRAM ADMIN AUTH
+# =========================================================
 
-    try:
-        with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute("""
-                SELECT id, name, description, price
-                FROM products
-                ORDER BY id
-            """)
-
-            rows = cur.fetchall()
-
-            result = []
-
-            for row in rows:
-                item = dict(row)
-                item["price"] = float(item["price"])
-                result.append(item)
-
-            return result
-
-    finally:
-        conn.close()
-
-
-def send_telegram(text):
-    token = os.environ.get("BOT_TOKEN", "").strip()
-    admin_id = os.environ.get("ADMIN_ID", "").strip()
-
-    if not token or not admin_id:
-        return False, "BOT_TOKEN or ADMIN_ID is not configured"
-
-    url = f"https://api.telegram.org/bot{token}/sendMessage"
-
-    try:
-        response = requests.post(
-            url,
-            json={
-                "chat_id": admin_id,
-                "text": text,
-            },
-            timeout=12,
-        )
-
-        response.raise_for_status()
-
-        data = response.json()
-
-        return bool(data.get("ok")), data.get("description", "")
-
-    except Exception as exc:
-        return False, str(exc)
-
-
-def verify_admin_telegram():
-    """
-    Проверяет Telegram Web App initData.
-
-    Клиент отправляет:
-    X-Telegram-Init-Data: Telegram.WebApp.initData
-
-    Сервер проверяет подпись Telegram и ID пользователя.
-    """
-
+def verify_telegram_init_data():
     init_data = request.headers.get(
         "X-Telegram-Init-Data",
-        ""
+        "",
     ).strip()
 
     bot_token = os.environ.get(
         "BOT_TOKEN",
-        ""
+        "",
     ).strip()
 
     admin_id = os.environ.get(
         "ADMIN_ID",
-        ""
+        "",
     ).strip()
 
     if not init_data or not bot_token or not admin_id:
-        return False
+        return False, None
 
     try:
         parsed = dict(
@@ -217,31 +132,15 @@ def verify_admin_telegram():
 
         received_hash = parsed.pop(
             "hash",
-            ""
+            "",
         )
 
         if not received_hash:
-            return False
-
-        auth_date = int(
-            parsed.get(
-                "auth_date",
-                "0"
-            )
-        )
-
-        if not auth_date:
-            return False
-
-        # Не принимаем слишком старые initData.
-        if abs(time.time() - auth_date) > 86400:
-            return False
+            return False, None
 
         data_check_string = "\n".join(
             f"{key}={value}"
-            for key, value in sorted(
-                parsed.items()
-            )
+            for key, value in sorted(parsed.items())
         )
 
         secret_key = hmac.new(
@@ -260,66 +159,196 @@ def verify_admin_telegram():
             calculated_hash,
             received_hash,
         ):
-            return False
+            return False, None
 
-        user_json = parsed.get(
-            "user",
-            ""
+        auth_date = int(
+            parsed.get("auth_date", "0")
         )
 
-        if not user_json:
-            return False
+        if not auth_date:
+            return False, None
 
-        user_data = json.loads(user_json)
+        if time.time() - auth_date > 86400:
+            return False, None
 
-        telegram_user_id = str(
-            user_data.get("id", "")
+        user = json.loads(
+            parsed.get("user", "{}")
         )
 
-        return telegram_user_id == admin_id
+        user_id = str(
+            user.get("id", "")
+        )
+
+        if user_id != str(admin_id):
+            return False, user
+
+        return True, user
 
     except Exception:
-        return False
+        return False, None
 
 
 def require_admin():
-    if not verify_admin_telegram():
+    ok, _ = verify_telegram_init_data()
+
+    if not ok:
         return jsonify({
-            "error": "Доступ запрещён"
+            "error": "Доступ разрешён только владельцу."
         }), 403
 
     return None
 
 
-@app.get("/")
-def index():
-    return send_from_directory(
-        BASE_DIR / "static",
-        "index.html",
-    )
+# =========================================================
+# PRODUCTS
+# =========================================================
 
+def get_products():
+    conn = db()
 
-@app.get("/health")
-def health():
-    return jsonify({
-        "ok": True,
-        "service": "greenleaf",
-    })
+    try:
+        with conn.cursor(
+            cursor_factory=RealDictCursor
+        ) as cur:
+
+            cur.execute("""
+                SELECT
+                    id,
+                    name,
+                    description,
+                    price,
+                    category,
+                    image_url
+                FROM products
+                ORDER BY id DESC
+            """)
+
+            product_rows = cur.fetchall()
+
+            cur.execute("""
+                SELECT
+                    id,
+                    product_id,
+                    author,
+                    rating,
+                    text,
+                    created_at
+                FROM reviews
+                ORDER BY created_at DESC
+            """)
+
+            review_rows = cur.fetchall()
+
+            reviews_by_product = {}
+
+            for row in review_rows:
+                review = dict(row)
+
+                review["created_at"] = (
+                    review["created_at"].isoformat()
+                    if review["created_at"]
+                    else ""
+                )
+
+                reviews_by_product.setdefault(
+                    review["product_id"],
+                    [],
+                ).append(review)
+
+            result = []
+
+            for row in product_rows:
+                product = dict(row)
+
+                product["price"] = float(
+                    product["price"]
+                )
+
+                reviews = reviews_by_product.get(
+                    product["id"],
+                    [],
+                )
+
+                product["reviews"] = reviews[:5]
+                product["review_count"] = len(
+                    reviews
+                )
+
+                if reviews:
+                    product["rating"] = round(
+                        sum(
+                            r["rating"]
+                            for r in reviews
+                        ) / len(reviews),
+                        1,
+                    )
+                else:
+                    product["rating"] = 0
+
+                result.append(product)
+
+            return result
+
+    finally:
+        conn.close()
 
 
 @app.get("/api/products")
 def api_products():
     return jsonify({
-        "products": products(),
+        "products": get_products()
     })
 
 
-@app.get("/api/admin/check")
-def admin_check():
-    return jsonify({
-        "ok": True,
-        "admin": verify_admin_telegram(),
-    })
+def upload_product_image(file):
+    if not file or not file.filename:
+        return ""
+
+    allowed = {
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+    }
+
+    content_type = (
+        file.mimetype or ""
+    ).lower()
+
+    if content_type not in allowed:
+        raise ValueError(
+            "Разрешены только JPG, PNG и WEBP."
+        )
+
+    raw = file.read()
+
+    if len(raw) > 4 * 1024 * 1024:
+        raise ValueError(
+            "Фото слишком большое. "
+            "Используй фото до 4 МБ."
+        )
+
+    extension = {
+        "image/jpeg": "jpg",
+        "image/png": "png",
+        "image/webp": "webp",
+    }[content_type]
+
+    pathname = (
+        "greenleaf/products/"
+        f"{uuid.uuid4().hex}.{extension}"
+    )
+
+    client = BlobClient()
+
+    blob = client.put(
+        pathname,
+        raw,
+        access="public",
+        content_type=content_type,
+        add_random_suffix=True,
+    )
+
+    return blob.url
 
 
 @app.post("/api/products")
@@ -329,68 +358,110 @@ def add_product():
     if denied:
         return denied
 
-    data = request.get_json(
-        silent=True
-    ) or {}
-
-    name = str(
-        data.get("name", "")
+    name = request.form.get(
+        "name",
+        "",
     ).strip()
 
-    description = str(
-        data.get("description", "")
+    description = request.form.get(
+        "description",
+        "",
+    ).strip()
+
+    category = request.form.get(
+        "category",
+        "",
     ).strip()
 
     try:
         price = float(
-            data.get("price")
+            request.form.get(
+                "price",
+                "",
+            )
         )
-    except (
-        TypeError,
-        ValueError,
-    ):
+    except ValueError:
         return jsonify({
-            "error": "Некорректная цена"
+            "error": "Некорректная цена."
         }), 400
 
-    if not name or price < 0:
+    if not name:
         return jsonify({
-            "error": "Нужно указать название и корректную цену"
+            "error": "Введите название товара."
         }), 400
+
+    if price < 0:
+        return jsonify({
+            "error": "Цена не может быть отрицательной."
+        }), 400
+
+    try:
+        image_url = upload_product_image(
+            request.files.get("image")
+        )
+    except ValueError as exc:
+        return jsonify({
+            "error": str(exc)
+        }), 400
+    except Exception as exc:
+        return jsonify({
+            "error": (
+                "Ошибка загрузки фотографии: "
+                f"{str(exc)}"
+            )
+        }), 500
 
     conn = db()
 
     try:
-        with conn.cursor() as cur:
+        with conn.cursor(
+            cursor_factory=RealDictCursor
+        ) as cur:
+
             cur.execute(
                 """
                 INSERT INTO products
-                (name, description, price)
-                VALUES (%s, %s, %s)
-                RETURNING id
+                (
+                    name,
+                    description,
+                    price,
+                    category,
+                    image_url
+                )
+                VALUES (%s, %s, %s, %s, %s)
+                RETURNING
+                    id,
+                    name,
+                    description,
+                    price,
+                    category,
+                    image_url
                 """,
                 (
                     name,
                     description,
                     price,
+                    category,
+                    image_url,
                 ),
             )
 
-            product_id = cur.fetchone()[0]
+            product = dict(
+                cur.fetchone()
+            )
 
         conn.commit()
 
     finally:
         conn.close()
 
+    product["price"] = float(
+        product["price"]
+    )
+
     return jsonify({
         "ok": True,
-        "product": {
-            "id": product_id,
-            "name": name,
-            "description": description,
-            "price": price,
-        },
+        "product": product,
     })
 
 
@@ -401,54 +472,106 @@ def update_product(product_id):
     if denied:
         return denied
 
-    data = request.get_json(
-        silent=True
-    ) or {}
-
-    name = str(
-        data.get("name", "")
+    name = request.form.get(
+        "name",
+        "",
     ).strip()
 
-    description = str(
-        data.get("description", "")
+    description = request.form.get(
+        "description",
+        "",
+    ).strip()
+
+    category = request.form.get(
+        "category",
+        "",
     ).strip()
 
     try:
         price = float(
-            data.get("price")
+            request.form.get(
+                "price",
+                "",
+            )
         )
-    except (
-        TypeError,
-        ValueError,
-    ):
+    except ValueError:
         return jsonify({
-            "error": "Некорректная цена"
+            "error": "Некорректная цена."
         }), 400
 
     if not name or price < 0:
         return jsonify({
-            "error": "Нужно указать название и корректную цену"
+            "error": "Проверьте название и цену."
         }), 400
+
+    image_file = request.files.get(
+        "image"
+    )
+
+    image_url = None
+
+    if image_file and image_file.filename:
+        try:
+            image_url = upload_product_image(
+                image_file
+            )
+        except ValueError as exc:
+            return jsonify({
+                "error": str(exc)
+            }), 400
+        except Exception as exc:
+            return jsonify({
+                "error": (
+                    "Ошибка загрузки фотографии: "
+                    f"{str(exc)}"
+                )
+            }), 500
 
     conn = db()
 
     try:
         with conn.cursor() as cur:
-            cur.execute(
-                """
-                UPDATE products
-                SET name = %s,
-                    description = %s,
-                    price = %s
-                WHERE id = %s
-                """,
-                (
-                    name,
-                    description,
-                    price,
-                    product_id,
-                ),
-            )
+
+            if image_url:
+                cur.execute(
+                    """
+                    UPDATE products
+                    SET
+                        name = %s,
+                        description = %s,
+                        price = %s,
+                        category = %s,
+                        image_url = %s
+                    WHERE id = %s
+                    """,
+                    (
+                        name,
+                        description,
+                        price,
+                        category,
+                        image_url,
+                        product_id,
+                    ),
+                )
+            else:
+                cur.execute(
+                    """
+                    UPDATE products
+                    SET
+                        name = %s,
+                        description = %s,
+                        price = %s,
+                        category = %s
+                    WHERE id = %s
+                    """,
+                    (
+                        name,
+                        description,
+                        price,
+                        category,
+                        product_id,
+                    ),
+                )
 
             updated = cur.rowcount
 
@@ -457,9 +580,9 @@ def update_product(product_id):
     finally:
         conn.close()
 
-    if updated == 0:
+    if not updated:
         return jsonify({
-            "error": "Товар не найден"
+            "error": "Товар не найден."
         }), 404
 
     return jsonify({
@@ -493,14 +616,213 @@ def delete_product(product_id):
     finally:
         conn.close()
 
-    if deleted == 0:
+    if not deleted:
         return jsonify({
-            "error": "Товар не найден"
+            "error": "Товар не найден."
         }), 404
 
     return jsonify({
         "ok": True
     })
+
+
+# =========================================================
+# REVIEWS
+# =========================================================
+
+@app.post("/api/reviews")
+def add_review():
+    denied = require_admin()
+
+    if denied:
+        return denied
+
+    data = request.get_json(
+        silent=True
+    ) or {}
+
+    try:
+        product_id = int(
+            data.get("product_id")
+        )
+
+        rating = int(
+            data.get("rating")
+        )
+
+    except (
+        TypeError,
+        ValueError,
+    ):
+        return jsonify({
+            "error": "Некорректные данные."
+        }), 400
+
+    author = str(
+        data.get(
+            "author",
+            "",
+        )
+    ).strip()
+
+    text = str(
+        data.get(
+            "text",
+            "",
+        )
+    ).strip()
+
+    if not author or not text:
+        return jsonify({
+            "error": "Заполните автора и текст."
+        }), 400
+
+    if rating < 1 or rating > 5:
+        return jsonify({
+            "error": (
+                "Оценка должна быть "
+                "от 1 до 5."
+            )
+        }), 400
+
+    conn = db()
+
+    try:
+        with conn.cursor() as cur:
+
+            cur.execute(
+                """
+                SELECT id
+                FROM products
+                WHERE id = %s
+                """,
+                (product_id,),
+            )
+
+            if not cur.fetchone():
+                return jsonify({
+                    "error": "Товар не найден."
+                }), 404
+
+            cur.execute(
+                """
+                INSERT INTO reviews
+                (
+                    product_id,
+                    author,
+                    rating,
+                    text,
+                    created_at
+                )
+                VALUES (%s, %s, %s, %s, %s)
+                """,
+                (
+                    product_id,
+                    author,
+                    rating,
+                    text,
+                    datetime.now(timezone.utc),
+                ),
+            )
+
+        conn.commit()
+
+    finally:
+        conn.close()
+
+    return jsonify({
+        "ok": True
+    })
+
+
+@app.delete("/api/reviews/<int:review_id>")
+def delete_review(review_id):
+    denied = require_admin()
+
+    if denied:
+        return denied
+
+    conn = db()
+
+    try:
+        with conn.cursor() as cur:
+
+            cur.execute(
+                """
+                DELETE FROM reviews
+                WHERE id = %s
+                """,
+                (review_id,),
+            )
+
+            deleted = cur.rowcount
+
+        conn.commit()
+
+    finally:
+        conn.close()
+
+    if not deleted:
+        return jsonify({
+            "error": "Отзыв не найден."
+        }), 404
+
+    return jsonify({
+        "ok": True
+    })
+
+
+# =========================================================
+# ORDERS
+# =========================================================
+
+def send_telegram(text):
+    token = os.environ.get(
+        "BOT_TOKEN",
+        "",
+    ).strip()
+
+    admin_id = os.environ.get(
+        "ADMIN_ID",
+        "",
+    ).strip()
+
+    if not token or not admin_id:
+        return (
+            False,
+            "BOT_TOKEN или ADMIN_ID "
+            "не настроены.",
+        )
+
+    url = (
+        "https://api.telegram.org/"
+        f"bot{token}/sendMessage"
+    )
+
+    try:
+        response = requests.post(
+            url,
+            json={
+                "chat_id": admin_id,
+                "text": text,
+            },
+            timeout=12,
+        )
+
+        response.raise_for_status()
+
+        data = response.json()
+
+        return (
+            bool(data.get("ok")),
+            data.get(
+                "description",
+                "",
+            ),
+        )
+
+    except Exception as exc:
+        return False, str(exc)
 
 
 @app.post("/api/orders")
@@ -510,32 +832,50 @@ def create_order():
     ) or {}
 
     name = str(
-        data.get("customer_name", "")
+        data.get(
+            "customer_name",
+            "",
+        )
     ).strip()
 
     phone = str(
-        data.get("phone", "")
+        data.get(
+            "phone",
+            "",
+        )
     ).strip()
 
     city = str(
-        data.get("city", "")
+        data.get(
+            "city",
+            "",
+        )
     ).strip()
 
     method = str(
-        data.get("delivery_method", "")
+        data.get(
+            "delivery_method",
+            "",
+        )
     ).strip()
 
     address = str(
-        data.get("address", "")
+        data.get(
+            "address",
+            "",
+        )
     ).strip()
 
     comment = str(
-        data.get("comment", "")
+        data.get(
+            "comment",
+            "",
+        )
     ).strip()
 
     items = data.get(
         "items",
-        []
+        [],
     )
 
     if (
@@ -545,27 +885,31 @@ def create_order():
         or not items
     ):
         return jsonify({
-            "error": "Заполните имя, способ получения и корзину"
+            "error": (
+                "Заполните имя, способ "
+                "получения и корзину."
+            )
         }), 400
 
     catalog = {
         p["id"]: p
-        for p in products()
+        for p in get_products()
     }
 
     normalized = []
     total = 0.0
 
     for item in items:
+
         try:
-            pid = int(
+            product_id = int(
                 item.get("id")
             )
 
-            qty = int(
+            quantity = int(
                 item.get(
                     "quantity",
-                    1
+                    1,
                 )
             )
 
@@ -575,31 +919,39 @@ def create_order():
             AttributeError,
         ):
             return jsonify({
-                "error": "Некорректный товар в корзине"
+                "error": (
+                    "Некорректный товар "
+                    "в корзине."
+                )
             }), 400
 
         if (
-            qty < 1
-            or pid not in catalog
+            quantity < 1
+            or product_id not in catalog
         ):
             return jsonify({
-                "error": "Некорректный товар в корзине"
+                "error": (
+                    "Некорректный товар "
+                    "в корзине."
+                )
             }), 400
 
-        product = catalog[pid]
+        product = catalog[
+            product_id
+        ]
 
         line_total = (
             float(product["price"])
-            * qty
+            * quantity
         )
 
         normalized.append({
-            "id": pid,
+            "id": product_id,
             "name": product["name"],
             "price": float(
                 product["price"]
             ),
-            "quantity": qty,
+            "quantity": quantity,
             "line_total": line_total,
         })
 
@@ -613,6 +965,7 @@ def create_order():
 
     try:
         with conn.cursor() as cur:
+
             cur.execute(
                 """
                 INSERT INTO orders
@@ -630,16 +983,8 @@ def create_order():
                 )
                 VALUES
                 (
-                    %s,
-                    %s,
-                    %s,
-                    %s,
-                    %s,
-                    %s,
-                    %s,
-                    %s,
-                    %s,
-                    %s
+                    %s, %s, %s, %s, %s,
+                    %s, %s, %s, %s, %s
                 )
                 RETURNING id
                 """,
@@ -665,7 +1010,7 @@ def create_order():
         conn.close()
 
     lines = [
-        "🛍 GREENLEAF — НОВЫЙ ЗАКАЗ",
+        "GREENLEAF — НОВЫЙ ЗАКАЗ",
         f"Заказ №{order_id}",
         "",
         f"Клиент: {name}",
@@ -684,13 +1029,13 @@ def create_order():
             f"{item['line_total']:.0f} TMT"
         )
 
-    lines += [
+    lines.extend([
         "",
         f"ИТОГО: {total:.0f} TMT",
         f"Комментарий: {comment or 'нет'}",
-    ]
+    ])
 
-    sent, telegram_error = send_telegram(
+    telegram_sent, telegram_error = send_telegram(
         "\n".join(lines)
     )
 
@@ -698,10 +1043,10 @@ def create_order():
         "ok": True,
         "order_id": order_id,
         "total": total,
-        "telegram_sent": sent,
+        "telegram_sent": telegram_sent,
         "telegram_error": (
             ""
-            if sent
+            if telegram_sent
             else telegram_error
         ),
     })
@@ -714,6 +1059,11 @@ def list_orders():
     if denied:
         return denied
 
+    view = request.args.get(
+        "view",
+        "active",
+    )
+
     conn = db()
 
     try:
@@ -721,45 +1071,75 @@ def list_orders():
             cursor_factory=RealDictCursor
         ) as cur:
 
-            cur.execute("""
-                SELECT
-                    id,
-                    customer_name,
-                    phone,
-                    city,
-                    delivery_method,
-                    address,
-                    comment,
-                    items_json,
-                    total,
-                    status,
-                    created_at
-                FROM orders
-                ORDER BY id DESC
-            """)
+            if view == "archive":
+
+                cur.execute("""
+                    SELECT
+                        id,
+                        customer_name,
+                        phone,
+                        city,
+                        delivery_method,
+                        address,
+                        comment,
+                        items_json,
+                        total,
+                        status,
+                        created_at
+                    FROM orders
+                    WHERE status IN (
+                        'completed',
+                        'cancelled'
+                    )
+                    ORDER BY id DESC
+                """)
+
+            else:
+
+                cur.execute("""
+                    SELECT
+                        id,
+                        customer_name,
+                        phone,
+                        city,
+                        delivery_method,
+                        address,
+                        comment,
+                        items_json,
+                        total,
+                        status,
+                        created_at
+                    FROM orders
+                    WHERE status NOT IN (
+                        'completed',
+                        'cancelled'
+                    )
+                    ORDER BY id DESC
+                """)
 
             rows = cur.fetchall()
 
             result = []
 
             for row in rows:
-                item = dict(row)
 
-                item["items"] = item.pop(
+                order = dict(row)
+
+                order["items"] = order.pop(
                     "items_json"
                 )
 
-                item["total"] = float(
-                    item["total"]
+                order["total"] = float(
+                    order["total"]
                 )
 
-                if item["created_at"]:
-                    item["created_at"] = (
-                        item["created_at"]
-                        .isoformat()
-                    )
+                order["created_at"] = (
+                    order["created_at"].isoformat()
+                    if order["created_at"]
+                    else ""
+                )
 
-                result.append(item)
+                result.append(order)
 
             return jsonify({
                 "orders": result
@@ -770,7 +1150,7 @@ def list_orders():
 
 
 @app.patch("/api/orders/<int:order_id>/status")
-def update_order_status(order_id):
+def change_order_status(order_id):
     denied = require_admin()
 
     if denied:
@@ -781,18 +1161,30 @@ def update_order_status(order_id):
     ) or {}
 
     status = str(
-        data.get("status", "")
+        data.get(
+            "status",
+            "",
+        )
     ).strip()
 
-    if status not in ORDER_STATUSES:
+    allowed = {
+        "new",
+        "processing",
+        "ready",
+        "completed",
+        "cancelled",
+    }
+
+    if status not in allowed:
         return jsonify({
-            "error": "Некорректный статус"
+            "error": "Недопустимый статус."
         }), 400
 
     conn = db()
 
     try:
         with conn.cursor() as cur:
+
             cur.execute(
                 """
                 UPDATE orders
@@ -812,17 +1204,57 @@ def update_order_status(order_id):
     finally:
         conn.close()
 
-    if updated == 0:
+    if not updated:
         return jsonify({
-            "error": "Заказ не найден"
+            "error": "Заказ не найден."
         }), 404
 
     return jsonify({
-        "ok": True,
-        "status": status,
-        "status_label": ORDER_STATUSES[status],
+        "ok": True
     })
 
+
+# =========================================================
+# ADMIN CHECK
+# =========================================================
+
+@app.get("/api/admin/check")
+def admin_check():
+    ok, user = verify_telegram_init_data()
+
+    return jsonify({
+        "admin": ok,
+        "user_id": (
+            user.get("id")
+            if user
+            else None
+        ),
+    })
+
+
+# =========================================================
+# PAGES
+# =========================================================
+
+@app.get("/")
+def index():
+    return send_from_directory(
+        BASE_DIR / "static",
+        "index.html",
+    )
+
+
+@app.get("/health")
+def health():
+    return jsonify({
+        "ok": True,
+        "service": "greenleaf",
+    })
+
+
+# =========================================================
+# START
+# =========================================================
 
 init_db()
 
@@ -833,7 +1265,7 @@ if __name__ == "__main__":
         port=int(
             os.environ.get(
                 "PORT",
-                "5000"
+                "5000",
             )
-        )
-                    )
+        ),
+    )
