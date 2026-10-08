@@ -2,37 +2,28 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8">
-
   <meta
     name="viewport"
     content="width=device-width,initial-scale=1,viewport-fit=cover"
-  >
-
-  <meta
-    name="theme-color"
-    content="#ffffff"
   >
 
   <title>Greenleaf</title>
 
   <style>
     :root {
-      --green: #16834b;
-      --green-dark: #0f6d3d;
-      --green-light: #eaf7ef;
-      --green-soft: #f3faf5;
-      --text: #111814;
-      --muted: #718078;
-      --border: #e7ece9;
-      --bg: #f7f9f7;
+      --green: #173f2c;
+      --green-2: #245b40;
+      --light-green: #edf4ef;
+      --text: #151815;
+      --muted: #777d79;
+      --line: #e5e8e5;
+      --bg: #f7f8f7;
       --white: #ffffff;
-      --danger: #d84c4c;
-      --shadow: 0 8px 30px rgba(17, 24, 20, .06);
+      --danger: #8f3434;
     }
 
     * {
       box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
     }
 
     html {
@@ -41,15 +32,14 @@
 
     body {
       margin: 0;
+      background: var(--bg);
+      color: var(--text);
       font-family:
         -apple-system,
         BlinkMacSystemFont,
         "Segoe UI",
         Arial,
         sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
     }
 
     button,
@@ -65,584 +55,674 @@
 
     .app {
       max-width: 760px;
-      margin: 0 auto;
       min-height: 100vh;
-      padding-bottom: 105px;
+      margin: 0 auto;
+      background: var(--bg);
     }
 
-    /* TOP BAR */
-
-    .topbar {
+    .top {
       position: sticky;
       top: 0;
-      z-index: 50;
-      background: rgba(255,255,255,.94);
+      z-index: 20;
+      background: rgba(247,248,247,.94);
       backdrop-filter: blur(18px);
-      border-bottom: 1px solid rgba(231,236,233,.8);
+      padding:
+        calc(14px + env(safe-area-inset-top))
+        18px
+        14px;
+      border-bottom: 1px solid rgba(0,0,0,.04);
     }
 
-    .topbar-inner {
+    .top-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 14px 18px;
+      gap: 12px;
     }
 
     .brand {
       display: flex;
       align-items: center;
-      gap: 10px;
-      font-weight: 800;
-      color: var(--green);
-      font-size: 20px;
-      letter-spacing: -.5px;
+      gap: 11px;
     }
 
     .brand-mark {
-      width: 38px;
-      height: 38px;
-      border-radius: 12px;
+      width: 34px;
+      height: 34px;
+      border: 1.5px solid var(--green);
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: var(--green);
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: .05em;
+    }
+
+    .brand-name {
+      font-size: 19px;
+      font-weight: 700;
+      letter-spacing: .12em;
+    }
+
+    .brand-sub {
+      font-size: 9px;
+      letter-spacing: .18em;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .lang {
+      display: flex;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 3px;
+      background: white;
+    }
+
+    .lang button {
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      padding: 6px 9px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .lang button.active {
       background: var(--green);
       color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 21px;
-      box-shadow: 0 6px 18px rgba(22,131,75,.2);
     }
 
-    .language-btn {
-      border: 1px solid var(--border);
-      background: white;
-      color: var(--text);
-      border-radius: 12px;
-      padding: 8px 11px;
-      font-size: 13px;
-      font-weight: 800;
-      min-width: 58px;
-    }
-
-    .language-btn:active {
-      transform: scale(.96);
-    }
-
-    /* CONTENT */
-
-    .content {
-      padding: 20px 18px 0;
+    main {
+      padding: 18px 16px 110px;
     }
 
     .page {
       display: none;
-      animation: pageIn .2s ease;
     }
 
     .page.active {
       display: block;
     }
 
-    @keyframes pageIn {
-      from {
-        opacity: 0;
-        transform: translateY(5px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+    .hero {
+      background: var(--green);
+      color: white;
+      border-radius: 26px;
+      padding: 28px 22px;
+      margin-bottom: 18px;
     }
 
-    /* HOME */
+    .hero-label {
+      font-size: 10px;
+      letter-spacing: .2em;
+      text-transform: uppercase;
+      opacity: .65;
+      margin-bottom: 13px;
+    }
 
-    .hero {
-      background:
-        linear-gradient(
-          145deg,
-          #eaf7ef 0%,
-          #ffffff 75%
-        );
-      border-radius: 28px;
-      padding: 28px 22px;
-      margin-bottom: 20px;
+    .hero h1 {
+      margin: 0;
+      font-family: Georgia, serif;
+      font-size: 34px;
+      font-weight: 500;
+      line-height: 1.05;
+    }
+
+    .hero p {
+      color: rgba(255,255,255,.72);
+      line-height: 1.55;
+      font-size: 14px;
+      margin: 13px 0 0;
+      max-width: 500px;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 24px 2px 12px;
+    }
+
+    .section-head h2 {
+      margin: 0;
+      font-family: Georgia, serif;
+      font-size: 23px;
+      font-weight: 500;
+    }
+
+    .section-head span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .categories {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      scrollbar-width: none;
+    }
+
+    .categories::-webkit-scrollbar {
+      display: none;
+    }
+
+    .category {
+      flex: 0 0 auto;
+      border: 1px solid var(--line);
+      background: white;
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-size: 12px;
+    }
+
+    .category.active {
+      background: var(--green);
+      color: white;
+      border-color: var(--green);
+    }
+
+    .products {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap: 12px;
+    }
+
+    .product {
+      background: white;
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,.035);
+    }
+
+    .product-image {
+      aspect-ratio: 1 / 1.08;
+      background: #eef1ee;
       overflow: hidden;
       position: relative;
     }
 
-    .hero::after {
-      content: "";
-      position: absolute;
-      width: 150px;
-      height: 150px;
-      border-radius: 50%;
-      background: rgba(22,131,75,.07);
-      right: -50px;
-      top: -50px;
+    .product-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
     }
 
-    .hero-label {
-      color: var(--green);
-      font-weight: 800;
-      font-size: 13px;
-      margin-bottom: 10px;
-      position: relative;
-      z-index: 1;
+    .product-placeholder {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      place-items: center;
+      color: #9ba29d;
+      font-size: 11px;
+      letter-spacing: .12em;
+      text-transform: uppercase;
     }
 
-    .hero h1 {
-      font-size: 34px;
-      line-height: 1.05;
-      letter-spacing: -1.5px;
-      margin: 0 0 12px;
-      max-width: 500px;
-      position: relative;
-      z-index: 1;
+    .product-body {
+      padding: 13px;
     }
 
-    .hero p {
+    .product-category {
       color: var(--muted);
-      line-height: 1.5;
-      margin: 0 0 22px;
-      max-width: 520px;
-      position: relative;
-      z-index: 1;
-    }
-
-    .primary-btn {
-      border: 0;
-      background: var(--green);
-      color: white;
-      border-radius: 15px;
-      padding: 14px 18px;
-      font-weight: 700;
-      box-shadow: 0 8px 20px rgba(22,131,75,.2);
-    }
-
-    .primary-btn:active {
-      transform: scale(.98);
-    }
-
-    .section-title {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin: 24px 0 12px;
-    }
-
-    .section-title h2 {
-      margin: 0;
-      font-size: 21px;
-      letter-spacing: -.5px;
-    }
-
-    .small-link {
-      border: 0;
-      background: transparent;
-      color: var(--green);
-      font-weight: 700;
-      padding: 5px;
-    }
-
-    /* CATALOG */
-
-    .catalog-status {
-      color: var(--muted);
-      font-size: 13px;
-      margin: 5px 0 14px;
-    }
-
-    .product-card {
-      background: white;
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 17px;
-      margin: 12px 0;
-      box-shadow: var(--shadow);
-    }
-
-    .product-info {
-      min-width: 0;
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      margin-bottom: 6px;
     }
 
     .product-name {
+      font-family: Georgia, serif;
       font-size: 18px;
-      font-weight: 800;
-      margin: 0 0 5px;
+      margin-bottom: 5px;
     }
 
     .product-description {
       color: var(--muted);
-      font-size: 14px;
-      line-height: 1.4;
+      font-size: 12px;
+      line-height: 1.45;
+      min-height: 35px;
     }
 
     .product-bottom {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 12px;
-      margin-top: 14px;
+      gap: 7px;
+      margin-top: 12px;
     }
 
     .product-price {
-      font-size: 20px;
-      font-weight: 850;
-    }
-
-    .add-btn {
-      width: 44px;
-      height: 44px;
-      border: 0;
-      border-radius: 14px;
-      background: var(--green);
-      color: white;
-      font-size: 25px;
-      line-height: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    /* CART */
-
-    .empty {
-      background: white;
-      border: 1px solid var(--border);
-      border-radius: 22px;
-      padding: 30px 20px;
-      text-align: center;
-      color: var(--muted);
-    }
-
-    .empty-icon {
-      font-size: 36px;
-      margin-bottom: 8px;
-    }
-
-    .cart-card {
-      background: white;
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 15px;
-      margin: 10px 0;
-    }
-
-    .cart-name {
-      font-weight: 800;
-      margin-bottom: 4px;
-    }
-
-    .cart-price {
-      color: var(--muted);
       font-size: 14px;
+      font-weight: 700;
+      white-space: nowrap;
     }
 
-    .qty {
-      display: flex;
-      align-items: center;
-      gap: 9px;
-    }
-
-    .qty button {
-      width: 34px;
-      height: 34px;
+    .small-button {
       border: 0;
-      border-radius: 10px;
-      background: var(--green-light);
-      color: var(--green);
-      font-weight: 900;
-      font-size: 18px;
-    }
-
-    .cart-summary {
       background: var(--green);
       color: white;
-      border-radius: 22px;
-      padding: 20px;
-      margin-top: 18px;
+      border-radius: 10px;
+      padding: 9px 11px;
+      font-size: 11px;
     }
 
-    .cart-summary-line {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    .rating {
+      color: var(--green);
+      font-size: 11px;
+      margin-top: 5px;
+    }
+
+    .panel {
+      background: white;
+      border-radius: 22px;
+      border: 1px solid rgba(0,0,0,.035);
+      padding: 18px;
       margin-bottom: 14px;
     }
 
-    .cart-summary-total {
-      font-size: 25px;
-      font-weight: 850;
+    .panel h2,
+    .panel h3 {
+      margin: 0 0 14px;
+      font-family: Georgia, serif;
+      font-weight: 500;
     }
 
-    .cart-summary button {
-      width: 100%;
-      border: 0;
-      border-radius: 15px;
-      background: white;
-      color: var(--green);
-      padding: 14px;
-      font-weight: 800;
+    .muted {
+      color: var(--muted);
     }
 
-    /* FORMS */
-
-    .form-card {
+    .empty {
+      text-align: center;
+      padding: 35px 18px;
+      color: var(--muted);
       background: white;
-      border: 1px solid var(--border);
-      border-radius: 22px;
-      padding: 18px;
-      margin-top: 15px;
+      border-radius: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 12px;
     }
 
     label {
       display: block;
-      font-size: 14px;
-      font-weight: 700;
-      margin-bottom: 5px;
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 6px;
     }
 
     input,
     textarea,
     select {
       width: 100%;
-      border: 1px solid var(--border);
-      background: #fafcfb;
-      color: var(--text);
-      border-radius: 14px;
-      padding: 13px;
-      margin: 6px 0 14px;
+      border: 1px solid var(--line);
+      background: white;
+      border-radius: 12px;
+      padding: 12px;
       outline: none;
+      color: var(--text);
+    }
+
+    textarea {
+      min-height: 95px;
+      resize: vertical;
     }
 
     input:focus,
     textarea:focus,
     select:focus {
       border-color: var(--green);
+    }
+
+    .primary {
+      width: 100%;
+      border: 0;
+      border-radius: 13px;
+      padding: 13px;
+      background: var(--green);
+      color: white;
+      font-weight: 600;
+    }
+
+    .secondary {
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      padding: 12px 14px;
       background: white;
+      color: var(--text);
     }
 
-    textarea {
-      min-height: 90px;
-      resize: vertical;
+    .danger {
+      border: 0;
+      border-radius: 11px;
+      padding: 9px 11px;
+      background: #f8eded;
+      color: var(--danger);
     }
 
-    .form-actions {
+    .row {
       display: flex;
+      align-items: center;
+      justify-content: space-between;
       gap: 10px;
     }
 
-    .form-actions button {
-      flex: 1;
+    .cart-item {
+      padding: 14px 0;
+      border-bottom: 1px solid var(--line);
     }
 
-    .secondary-btn {
-      border: 1px solid var(--border);
-      background: #f5f7f5;
-      color: var(--text);
-      border-radius: 14px;
-      padding: 13px;
+    .cart-item:last-child {
+      border-bottom: 0;
+    }
+
+    .qty {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .qty button {
+      width: 29px;
+      height: 29px;
+      border: 1px solid var(--line);
+      background: white;
+      border-radius: 9px;
+    }
+
+    .total {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid var(--line);
+      font-size: 18px;
       font-weight: 700;
     }
 
-    .notice {
-      padding: 13px;
-      border-radius: 14px;
-      background: var(--green-light);
-      color: #145b37;
-      margin-top: 12px;
-      line-height: 1.4;
-    }
-
-    /* PROFILE */
-
-    .profile-card {
-      background: white;
-      border: 1px solid var(--border);
-      border-radius: 22px;
-      padding: 20px;
-      margin-bottom: 14px;
-    }
-
-    .profile-avatar {
-      width: 58px;
-      height: 58px;
-      border-radius: 18px;
-      background: var(--green-light);
-      color: var(--green);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 25px;
-      font-weight: 900;
-      margin-bottom: 12px;
-    }
-
-    .profile-name {
-      font-size: 21px;
-      font-weight: 850;
-    }
-
-    .profile-sub {
-      color: var(--muted);
-      margin-top: 4px;
-    }
-
-    .admin-box {
-      background: #f4faf6;
-      border: 1px solid #d8eddf;
-      border-radius: 20px;
-      padding: 16px;
-      margin-top: 14px;
-    }
-
-    .admin-box h3 {
-      margin: 0 0 5px;
-    }
-
-    .admin-box p {
-      color: var(--muted);
-      font-size: 14px;
-      margin: 0 0 14px;
-    }
-
-    /* ADMIN ORDERS */
-
-    .admin-order {
-      background: white;
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 16px;
-      margin: 12px 0;
-    }
-
-    .admin-order h3 {
-      margin: 0;
-      font-size: 18px;
-    }
-
-    .order-status {
-      background: var(--green-light);
-      color: var(--green);
-      border-radius: 10px;
-      padding: 6px 9px;
-      font-size: 12px;
-      font-weight: 800;
-    }
-
-    .order-meta {
-      color: var(--muted);
-      font-size: 13px;
-      margin-top: 4px;
-    }
-
-    .order-line {
-      padding: 5px 0;
-      font-size: 14px;
-    }
-
-    .order-total {
-      font-size: 20px;
-      font-weight: 850;
-      margin: 12px 0;
-    }
-
-    .order-separator {
-      height: 1px;
-      background: var(--border);
-      margin: 13px 0;
-    }
-
-    /* BOTTOM NAV */
-
     .bottom-nav {
       position: fixed;
+      z-index: 50;
       left: 50%;
       bottom: 0;
       transform: translateX(-50%);
       width: min(760px, 100%);
-      z-index: 100;
       padding:
-        8px
-        12px
-        calc(8px + env(safe-area-inset-bottom));
+        9px 10px
+        calc(9px + env(safe-area-inset-bottom));
       background: rgba(255,255,255,.94);
       backdrop-filter: blur(20px);
-      border-top: 1px solid rgba(231,236,233,.9);
-    }
-
-    .nav-inner {
+      border-top: 1px solid var(--line);
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 5px;
+      grid-template-columns: repeat(4,1fr);
     }
 
     .nav-btn {
-      position: relative;
       border: 0;
       background: transparent;
-      color: #89938d;
-      border-radius: 15px;
-      padding: 7px 4px;
-      min-height: 58px;
-      font-size: 11px;
+      color: var(--muted);
+      font-size: 10px;
+      padding: 7px 3px;
+    }
+
+    .nav-btn.active {
+      color: var(--green);
       font-weight: 700;
     }
 
     .nav-icon {
       display: block;
-      font-size: 22px;
-      line-height: 24px;
-      margin-bottom: 2px;
+      font-size: 16px;
+      margin-bottom: 3px;
+      line-height: 1;
     }
 
-    .nav-btn.active {
-      background: var(--green-light);
-      color: var(--green);
-    }
-
-    .cart-badge {
-      position: absolute;
-      top: 3px;
-      right: 23%;
+    .badge {
+      display: inline-flex;
       min-width: 18px;
       height: 18px;
-      padding: 0 5px;
-      border-radius: 9px;
-      background: var(--green);
-      color: white;
-      font-size: 10px;
-      display: none;
       align-items: center;
       justify-content: center;
+      border-radius: 999px;
+      background: var(--green);
+      color: white;
+      font-size: 9px;
+      padding: 0 5px;
+      margin-left: 3px;
     }
 
-    .cart-badge.visible {
+    .admin-tabs,
+    .order-tabs {
       display: flex;
+      gap: 7px;
+      margin-bottom: 13px;
+      overflow-x: auto;
+    }
+
+    .tab {
+      flex: 0 0 auto;
+      border: 1px solid var(--line);
+      background: white;
+      border-radius: 999px;
+      padding: 9px 12px;
+      font-size: 11px;
+    }
+
+    .tab.active {
+      background: var(--green);
+      color: white;
+      border-color: var(--green);
+    }
+
+    .order {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px;
+      margin-bottom: 10px;
+    }
+
+    .order-number {
+      font-weight: 700;
+    }
+
+    .order-meta {
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 4px;
+      line-height: 1.5;
+    }
+
+    .order-items {
+      margin: 12px 0;
+      padding-top: 12px;
+      border-top: 1px solid var(--line);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .order-actions {
+      display: flex;
+      gap: 7px;
+    }
+
+    .order-actions select {
+      flex: 1;
+      padding: 9px;
+      font-size: 11px;
+    }
+
+    .admin-product {
+      display: flex;
+      gap: 10px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .admin-product:last-child {
+      border-bottom: 0;
+    }
+
+    .admin-thumb {
+      width: 62px;
+      height: 62px;
+      flex: 0 0 62px;
+      border-radius: 12px;
+      background: #eef1ee;
+      overflow: hidden;
+    }
+
+    .admin-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .admin-product-main {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .admin-product-name {
+      font-weight: 600;
+    }
+
+    .admin-product-price {
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 4px;
+    }
+
+    .admin-product-actions {
+      display: flex;
+      gap: 5px;
+      margin-top: 8px;
+    }
+
+    .review {
+      padding: 13px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .review:last-child {
+      border-bottom: 0;
+    }
+
+    .review-author {
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .review-stars {
+      color: var(--green);
+      letter-spacing: .08em;
+      font-size: 11px;
+      margin-top: 4px;
+    }
+
+    .review-text {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-top: 7px;
+    }
+
+    .file-label {
+      display: block;
+      border: 1px dashed #cbd2cc;
+      border-radius: 14px;
+      padding: 18px;
+      text-align: center;
+      color: var(--muted);
+      background: #fafbfa;
+    }
+
+    .file-label input {
+      display: none;
     }
 
     .hidden {
       display: none !important;
     }
 
-    .page-heading {
-      margin-bottom: 20px;
+    .modal {
+      position: fixed;
+      z-index: 100;
+      inset: 0;
+      background: rgba(0,0,0,.45);
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
     }
 
-    .page-heading h2 {
-      margin: 0 0 5px;
-      font-size: 28px;
-      letter-spacing: -.8px;
+    .modal.open {
+      display: flex;
     }
 
-    .page-heading p {
-      margin: 0;
-      color: var(--muted);
+    .modal-card {
+      width: min(760px,100%);
+      max-height: 90vh;
+      overflow-y: auto;
+      background: white;
+      border-radius: 26px 26px 0 0;
+      padding: 18px;
     }
 
-    @media (min-width: 600px) {
-      .content {
-        padding-left: 22px;
-        padding-right: 22px;
+    .detail-image {
+      width: 100%;
+      aspect-ratio: 1 / .85;
+      border-radius: 20px;
+      overflow: hidden;
+      background: #eef1ee;
+      margin-bottom: 16px;
+    }
+
+    .detail-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .toast {
+      position: fixed;
+      z-index: 200;
+      left: 50%;
+      bottom: 90px;
+      transform: translateX(-50%);
+      background: var(--green);
+      color: white;
+      padding: 11px 15px;
+      border-radius: 999px;
+      font-size: 12px;
+      opacity: 0;
+      pointer-events: none;
+      transition: .2s;
+    }
+
+    .toast.show {
+      opacity: 1;
+    }
+
+    @media (max-width: 420px) {
+      .products {
+        gap: 9px;
+      }
+
+      .product-body {
+        padding: 11px;
+      }
+
+      .product-name {
+        font-size: 16px;
+      }
+
+      .hero h1 {
+        font-size: 30px;
       }
     }
   </style>
@@ -652,29 +732,45 @@
 
 <div class="app">
 
-  <!-- TOP -->
-
-  <header class="topbar">
-    <div class="topbar-inner">
+  <header class="top">
+    <div class="top-row">
 
       <div class="brand">
-        <div class="brand-mark">🌿</div>
-        <span>Greenleaf</span>
+        <div class="brand-mark">G</div>
+
+        <div>
+          <div class="brand-name">
+            GREENLEAF
+          </div>
+
+          <div class="brand-sub">
+            TURKMENISTAN
+          </div>
+        </div>
       </div>
 
-      <button
-        class="language-btn"
-        id="languageBtn"
-        onclick="toggleLanguage()"
-      >
-        TM
-      </button>
+      <div class="lang">
+        <button
+          id="langRU"
+          class="active"
+          onclick="setLanguage('ru')"
+        >
+          RU
+        </button>
+
+        <button
+          id="langTM"
+          onclick="setLanguage('tm')"
+        >
+          TM
+        </button>
+      </div>
 
     </div>
   </header>
 
 
-  <main class="content">
+  <main>
 
     <!-- HOME -->
 
@@ -685,47 +781,26 @@
 
       <div class="hero">
 
-        <div
-          class="hero-label"
-          data-i18n="heroLabel"
-        >
-          GREENLEAF
+        <div class="hero-label">
+          Greenleaf
         </div>
 
-        <h1 data-i18n="heroTitle">
-          Добро пожаловать в Greenleaf
+        <h1>
+          Эстетика,<br>
+          которую хочется носить.
         </h1>
 
-        <p data-i18n="heroText">
-          Выбирайте понравившиеся товары
-          и оформляйте заказ быстро и удобно.
+        <p>
+          Избранные модели Greenleaf
+          с оформлением заказа прямо
+          в приложении.
         </p>
-
-        <button
-          class="primary-btn"
-          onclick="openPage('catalog')"
-          data-i18n="viewCatalog"
-        >
-          Смотреть каталог
-        </button>
 
       </div>
 
-
-      <div class="section-title">
-
-        <h2 data-i18n="popular">
-          Каталог
-        </h2>
-
-        <button
-          class="small-link"
-          onclick="openPage('catalog')"
-          data-i18n="allProducts"
-        >
-          Все товары
-        </button>
-
+      <div class="section-head">
+        <h2>Избранное</h2>
+        <span id="homeCount"></span>
       </div>
 
       <div id="homeProducts"></div>
@@ -740,22 +815,20 @@
       id="page-catalog"
     >
 
-      <div class="page-heading">
-
-        <h2 data-i18n="catalog">
-          Каталог
-        </h2>
-
-        <p
-          id="catalogStatus"
-          data-i18n="loading"
-        >
-          Загрузка каталога…
-        </p>
-
+      <div class="section-head">
+        <h2>Каталог</h2>
+        <span id="catalogCount"></span>
       </div>
 
-      <div id="catalog"></div>
+      <div
+        class="categories"
+        id="categories"
+      ></div>
+
+      <div
+        class="products"
+        id="catalogProducts"
+      ></div>
 
     </section>
 
@@ -767,162 +840,96 @@
       id="page-cart"
     >
 
-      <div class="page-heading">
-
-        <h2 data-i18n="cart">
-          Корзина
-        </h2>
-
-        <p data-i18n="cartSubtitle">
-          Проверьте товары перед оформлением.
-        </p>
-
+      <div class="section-head">
+        <h2>Корзина</h2>
+        <span id="cartHeaderCount"></span>
       </div>
 
-      <div id="cart"></div>
+      <div
+        class="panel"
+        id="cartPanel"
+      ></div>
 
       <div
-        class="cart-summary"
-        id="cartSummary"
+        class="panel hidden"
+        id="checkoutPanel"
       >
 
-        <div class="cart-summary-line">
+        <h2>
+          Оформление заказа
+        </h2>
 
-          <span data-i18n="total">
-            Итого
-          </span>
-
-          <span
-            class="cart-summary-total"
-            id="cartTotal"
+        <div class="form-group">
+          <label>Имя</label>
+          <input
+            id="name"
+            placeholder="Ваше имя"
           >
-            0 TMT
-          </span>
+        </div>
 
+        <div class="form-group">
+          <label>Телефон</label>
+          <input
+            id="phone"
+            placeholder="+993 ..."
+          >
+        </div>
+
+        <div class="form-group">
+          <label>Город</label>
+          <input
+            id="city"
+            placeholder="Туркменбаши"
+          >
+        </div>
+
+        <div class="form-group">
+          <label>
+            Способ получения
+          </label>
+
+          <select id="method">
+            <option value="Самовывоз">
+              Самовывоз
+            </option>
+
+            <option value="Доставка">
+              Доставка
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>
+            Адрес / пункт выдачи
+          </label>
+
+          <input
+            id="address"
+            placeholder="Адрес или пункт"
+          >
+        </div>
+
+        <div class="form-group">
+          <label>Комментарий</label>
+
+          <textarea
+            id="comment"
+            placeholder="Дополнительная информация"
+          ></textarea>
         </div>
 
         <button
-          onclick="showCheckout()"
-          id="checkoutBtn"
-          data-i18n="checkout"
+          class="primary"
+          onclick="submitOrder()"
         >
-          Оформить заказ
+          Отправить заказ
         </button>
 
-      </div>
-
-
-      <!-- CHECKOUT -->
-
-      <div
-        class="form-card hidden"
-        id="checkout"
-      >
-
-        <div class="section-title">
-          <h2 data-i18n="order">
-            Оформление заказа
-          </h2>
-        </div>
-
-        <label data-i18n="name">
-          Имя
-        </label>
-
-        <input
-          id="name"
-          data-i18n-placeholder="namePlaceholder"
-          placeholder="Например, Alina"
-        >
-
-
-        <label data-i18n="phone">
-          Телефон
-        </label>
-
-        <input
-          id="phone"
-          placeholder="+993 ..."
-        >
-
-
-        <label data-i18n="city">
-          Город
-        </label>
-
-        <input
-          id="city"
-          data-i18n-placeholder="cityPlaceholder"
-          placeholder="Туркменбаши"
-        >
-
-
-        <label data-i18n="method">
-          Способ получения
-        </label>
-
-        <select id="method">
-
-          <option
-            value="Самовывоз"
-            data-i18n="pickup"
-          >
-            Самовывоз
-          </option>
-
-          <option
-            value="Доставка"
-            data-i18n="delivery"
-          >
-            Доставка
-          </option>
-
-        </select>
-
-
-        <label data-i18n="address">
-          Адрес / пункт выдачи
-        </label>
-
-        <input
-          id="address"
-          data-i18n-placeholder="addressPlaceholder"
-          placeholder="Адрес или название пункта"
-        >
-
-
-        <label data-i18n="comment">
-          Комментарий
-        </label>
-
-        <textarea
-          id="comment"
-          data-i18n-placeholder="commentPlaceholder"
-          placeholder="Дополнительная информация"
-        ></textarea>
-
-
-        <div class="form-actions">
-
-          <button
-            class="secondary-btn"
-            onclick="hideCheckout()"
-            data-i18n="back"
-          >
-            Назад
-          </button>
-
-          <button
-            class="primary-btn"
-            onclick="submitOrder()"
-            data-i18n="sendOrder"
-          >
-            Отправить заказ
-          </button>
-
-        </div>
-
-        <div id="orderResult"></div>
+        <div
+          id="orderResult"
+          style="margin-top:12px"
+        ></div>
 
       </div>
 
@@ -936,92 +943,272 @@
       id="page-profile"
     >
 
-      <div class="page-heading">
+      <div class="hero">
 
-        <h2 data-i18n="profile">
+        <div class="hero-label">
+          Greenleaf
+        </div>
+
+        <h1>
           Профиль
+        </h1>
+
+        <p>
+          Управление приложением
+          доступно владельцу магазина.
+        </p>
+
+      </div>
+
+      <div
+        class="panel"
+        id="profileInfo"
+      >
+        <h2>
+          Ваш профиль
         </h2>
 
-        <p data-i18n="profileSubtitle">
-          Ваша информация в Greenleaf.
-        </p>
-
+        <div class="muted">
+          Telegram Web App
+        </div>
       </div>
-
-
-      <div class="profile-card">
-
-        <div class="profile-avatar">
-          👤
-        </div>
-
-        <div
-          class="profile-name"
-          id="profileName"
-          data-i18n="guest"
-        >
-          Гость
-        </div>
-
-        <div
-          class="profile-sub"
-          id="profileUsername"
-        >
-        </div>
-
-      </div>
-
-
-      <!-- ADMIN ENTRY -->
 
       <div
-        class="admin-box hidden"
-        id="adminEntry"
-      >
-
-        <h3 data-i18n="adminTitle">
-          Панель владельца
-        </h3>
-
-        <p data-i18n="adminDescription">
-          Управление заказами Greenleaf.
-        </p>
-
-        <button
-          class="primary-btn"
-          onclick="openAdminOrders()"
-          data-i18n="openAdmin"
-        >
-          Открыть панель
-        </button>
-
-      </div>
-
-
-      <!-- ADMIN ORDERS -->
-
-      <div
-        id="adminOrders"
+        id="adminPanel"
         class="hidden"
       >
 
-        <div class="section-title">
+        <div class="section-head">
+          <h2>Администрирование</h2>
+        </div>
 
-          <h2 data-i18n="orders">
-            Заказы
-          </h2>
+        <div class="admin-tabs">
 
           <button
-            class="small-link"
-            onclick="loadOrders()"
-            data-i18n="refresh"
+            class="tab active"
+            id="adminOrdersTab"
+            onclick="showAdminSection('orders')"
           >
-            Обновить
+            Заказы
+          </button>
+
+          <button
+            class="tab"
+            id="adminProductsTab"
+            onclick="showAdminSection('products')"
+          >
+            Товары
+          </button>
+
+          <button
+            class="tab"
+            id="adminReviewsTab"
+            onclick="showAdminSection('reviews')"
+          >
+            Отзывы
           </button>
 
         </div>
 
-        <div id="orders"></div>
+
+        <!-- ADMIN ORDERS -->
+
+        <div
+          id="adminOrdersSection"
+        >
+
+          <div class="order-tabs">
+
+            <button
+              class="tab active"
+              id="activeOrdersTab"
+              onclick="loadOrders('active')"
+            >
+              Активные
+            </button>
+
+            <button
+              class="tab"
+              id="archiveOrdersTab"
+              onclick="loadOrders('archive')"
+            >
+              Архив
+            </button>
+
+          </div>
+
+          <div id="ordersList"></div>
+
+        </div>
+
+
+        <!-- ADMIN PRODUCTS -->
+
+        <div
+          id="adminProductsSection"
+          class="hidden"
+        >
+
+          <div class="panel">
+
+            <h3 id="productFormTitle">
+              Новый товар
+            </h3>
+
+            <input
+              type="hidden"
+              id="editProductId"
+            >
+
+            <div class="form-group">
+              <label>Название</label>
+
+              <input
+                id="productName"
+                placeholder="Название товара"
+              >
+            </div>
+
+            <div class="form-group">
+              <label>Категория</label>
+
+              <input
+                id="productCategory"
+                placeholder="Например: Верхняя одежда"
+              >
+            </div>
+
+            <div class="form-group">
+              <label>Цена</label>
+
+              <input
+                id="productPrice"
+                type="number"
+                min="0"
+                step="1"
+                placeholder="Цена в TMT"
+              >
+            </div>
+
+            <div class="form-group">
+              <label>Описание</label>
+
+              <textarea
+                id="productDescription"
+                placeholder="Описание товара"
+              ></textarea>
+            </div>
+
+            <label class="file-label">
+              Выбрать фотографию
+
+              <input
+                id="productImage"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+              >
+            </label>
+
+            <div style="height:10px"></div>
+
+            <button
+              class="primary"
+              onclick="saveProduct()"
+            >
+              Сохранить товар
+            </button>
+
+            <div style="height:8px"></div>
+
+            <button
+              class="secondary"
+              style="width:100%"
+              onclick="resetProductForm()"
+            >
+              Очистить форму
+            </button>
+
+            <div
+              id="productFormResult"
+              style="margin-top:10px"
+            ></div>
+
+          </div>
+
+          <div
+            class="panel"
+            id="adminProductsList"
+          ></div>
+
+        </div>
+
+
+        <!-- ADMIN REVIEWS -->
+
+        <div
+          id="adminReviewsSection"
+          class="hidden"
+        >
+
+          <div class="panel">
+
+            <h3>
+              Добавить отзыв
+            </h3>
+
+            <div class="form-group">
+              <label>Товар</label>
+
+              <select
+                id="reviewProduct"
+              ></select>
+            </div>
+
+            <div class="form-group">
+              <label>Автор</label>
+
+              <input
+                id="reviewAuthor"
+                placeholder="Имя клиента"
+              >
+            </div>
+
+            <div class="form-group">
+              <label>Оценка</label>
+
+              <select id="reviewRating">
+                <option value="5">5</option>
+                <option value="4">4</option>
+                <option value="3">3</option>
+                <option value="2">2</option>
+                <option value="1">1</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Текст</label>
+
+              <textarea
+                id="reviewText"
+                placeholder="Текст отзыва"
+              ></textarea>
+            </div>
+
+            <button
+              class="primary"
+              onclick="saveReview()"
+            >
+              Добавить отзыв
+            </button>
+
+          </div>
+
+          <div
+            class="panel"
+            id="adminReviewsList"
+          ></div>
+
+        </div>
 
       </div>
 
@@ -1034,63 +1221,112 @@
 
   <nav class="bottom-nav">
 
-    <div class="nav-inner">
+    <button
+      class="nav-btn active"
+      data-page="home"
+      onclick="showPage('home')"
+    >
+      <span class="nav-icon">⌂</span>
+      Главная
+    </button>
 
-      <button
-        class="nav-btn active"
-        data-page="home"
-        onclick="openPage('home')"
+    <button
+      class="nav-btn"
+      data-page="catalog"
+      onclick="showPage('catalog')"
+    >
+      <span class="nav-icon">◫</span>
+      Каталог
+    </button>
+
+    <button
+      class="nav-btn"
+      data-page="cart"
+      onclick="showPage('cart')"
+    >
+      <span class="nav-icon">□</span>
+      Корзина
+      <span
+        id="navCartBadge"
+        class="badge hidden"
       >
-        <span class="nav-icon">⌂</span>
-        <span data-i18n="home">Главная</span>
-      </button>
+        0
+      </span>
+    </button>
 
-
-      <button
-        class="nav-btn"
-        data-page="catalog"
-        onclick="openPage('catalog')"
-      >
-        <span class="nav-icon">◫</span>
-        <span data-i18n="catalog">Каталог</span>
-      </button>
-
-
-      <button
-        class="nav-btn"
-        data-page="cart"
-        onclick="openPage('cart')"
-      >
-        <span class="nav-icon">🛍</span>
-
-        <span
-          class="cart-badge"
-          id="cartBadge"
-        >
-          0
-        </span>
-
-        <span data-i18n="cart">Корзина</span>
-      </button>
-
-
-      <button
-        class="nav-btn"
-        data-page="profile"
-        onclick="openPage('profile')"
-      >
-        <span class="nav-icon">♙</span>
-        <span data-i18n="profile">Профиль</span>
-      </button>
-
-    </div>
+    <button
+      class="nav-btn"
+      data-page="profile"
+      onclick="showPage('profile')"
+    >
+      <span class="nav-icon">○</span>
+      Профиль
+    </button>
 
   </nav>
 
 </div>
 
 
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<!-- PRODUCT DETAIL -->
+
+<div
+  class="modal"
+  id="productModal"
+  onclick="closeModal(event)"
+>
+
+  <div class="modal-card">
+
+    <div class="row">
+      <h2
+        id="modalProductName"
+        style="font-family:Georgia,serif;font-weight:500"
+      ></h2>
+
+      <button
+        class="secondary"
+        onclick="closeProductModal()"
+      >
+        Закрыть
+      </button>
+    </div>
+
+    <div
+      class="detail-image"
+      id="modalProductImage"
+    ></div>
+
+    <div
+      id="modalProductInfo"
+    ></div>
+
+    <button
+      class="primary"
+      id="modalAddButton"
+      onclick="addModalProductToCart()"
+    >
+      Добавить в корзину
+    </button>
+
+    <div class="section-head">
+      <h2>Отзывы</h2>
+    </div>
+
+    <div
+      id="modalReviews"
+    ></div>
+
+  </div>
+
+</div>
+
+
+<div
+  id="toast"
+  class="toast"
+></div>
+
 
 <script src="/static/script.js"></script>
 
