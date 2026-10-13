@@ -17,7 +17,42 @@ function updatePlaceholders(){const p={name:['Ваше имя','Adyňyz'],phone:
 function showPage(page){document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));const target=document.getElementById('page'+page[0].toUpperCase()+page.slice(1));if(target)target.classList.add('active');['Home','Catalog','Cart','Profile'].forEach(n=>{const b=document.getElementById('nav'+n);if(b)b.classList.toggle('active',n.toLowerCase()===page)});if(page==='cart')renderCart();if(page==='profile'&&isOwner&&currentAdminTab==='orders')loadOrders(currentOrderView);window.scrollTo({top:0,behavior:'smooth'});}
 function productImage(product, extra=''){if(product.image_url)return `<img class="product-photo ${extra}" src="${esc(product.image_url)}" alt="${esc(product.name)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling?.classList.remove('hidden')"><div class="photo-placeholder ${extra} hidden"><span>GREENLEAF</span></div>`;return `<div class="photo-placeholder ${extra}"><span>GREENLEAF</span></div>`;}
 function productCard(product, compact=false){const id=Number(product.id);return `<article class="card"> <button style="border:0;background:none;padding:0;width:100%;display:block;text-align:left" onclick="openProductModal(${id})">${productImage(product)}<div class="product-info"><div class="category">${esc(product.category||'')}</div><div class="product-name">${esc(product.name)}</div><div class="price">${money(product.price)}</div></div></button><div class="product-info" style="padding-top:0"><div class="card-actions"><button class="btn btn-outline btn-small" onclick="openProductModal(${id})">${t('details')}</button><button class="btn btn-primary btn-small" onclick="addToCart(${id})">${t('add')}</button></div></div></article>`;}
-async function loadProducts(){const catalog=document.getElementById('catalog');catalog.innerHTML=`<div class="subtle">${t('loading')}</div>`;try{const data=await apiFetch('/api/products');products=Array.isArray(data.products)?data.products:[];renderHomeProducts();renderCatalog();renderCart();if(isOwner)renderAdminProducts();}catch(e){catalog.innerHTML=`<div class="empty">${esc(e.message||t('error'))}</div>`;}}
+async function loadProducts() {
+  const catalog = document.getElementById('catalog');
+  if (catalog) {
+    catalog.innerHTML = `<div class="subtle">${t('loading')}</div>`;
+  }
+
+  const testProduct = {
+    id: -1,
+    name: 'Тестовый товар Greenleaf',
+    category: 'Тест',
+    price: 100,
+    description: 'Временный товар для проверки отображения.',
+    image_url: ''
+  };
+
+  try {
+    const data = await apiFetch('/api/products');
+
+    if (!Array.isArray(data.products)) {
+      throw new Error('Сервер не вернул список товаров');
+    }
+
+    products = data.products;
+  } catch (error) {
+    console.error('Ошибка загрузки каталога:', error);
+    products = [testProduct];
+  }
+
+  renderHomeProducts();
+  renderCatalog();
+  renderCart();
+
+  if (isOwner) {
+    renderAdminProducts();
+  }
+}
 function renderCatalog(){const el=document.getElementById('catalog');if(!el)return;el.innerHTML=products.length?products.map(p=>productCard(p)).join():`<div class="empty">${t('emptyCatalog')}</div>`;document.getElementById('catalogStatus').textContent=`${products.length} ${t('products')}`;}
 function renderHomeProducts(){const el=document.getElementById('homeProducts');if(el)el.innerHTML=products.length?products.slice(0,3).map(p=>productCard(p)).join():`<div class="empty">${t('emptyCatalog')}</div>`;}
 function addToCart(id){id=Number(id);const p=products.find(x=>Number(x.id)===id);if(!p)return;const item=cart.find(x=>Number(x.id)===id);if(item)item.quantity=Math.min(99,item.quantity+1);else cart.push({id,quantity:1});persistCart();renderCart();if(tg?.showPopup)tg.showPopup({message:t('added')});}
