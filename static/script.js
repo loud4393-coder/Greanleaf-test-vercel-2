@@ -44,14 +44,15 @@ function setupDrawer(){
   const sms=document.getElementById('smsOperator');
   if(call) call.href='tel:'+OPERATOR_PHONE;
   if(sms){
-    // Telegram's Android WebView may reject sms: links with ERR_UNKNOWN_URL_SCHEME.
-    // Do not navigate to the unsupported scheme; copy the number and guide the user instead.
-    sms.removeAttribute('href');
+    // Try Android's intent handler so the system can choose an SMS app.
+    // Do not use Telegram WebApp.openLink for intent: URLs; let the WebView hand it to Android.
+    sms.href = 'intent://'+OPERATOR_PHONE+'#Intent;scheme=smsto;action=android.intent.action.SENDTO;end';
     sms.setAttribute('role','button');
-    sms.addEventListener('click', async function(event){
+    sms.addEventListener('click', function(event){
       event.preventDefault();
       closeDrawer();
-      await copyOperatorNumber();
+      // Trigger the Android intent directly from the user's tap.
+      window.location.href = 'intent://'+OPERATOR_PHONE+'#Intent;scheme=smsto;action=android.intent.action.SENDTO;end';
     });
   }
   document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDrawer();});
