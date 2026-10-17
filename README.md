@@ -11,7 +11,7 @@ Set these in **Vercel → Project → Settings → Environment Variables** for P
 Never commit real secrets or share them in chat.
 
 ## Deploy
-The package includes `vercel.json`; keep it in the repository alongside `app.py` and `static/` so Vercel routes requests to the Flask entry point.
+The package includes `vercel.json`, which routes requests to the Python Flask entry point at `app.py` and serves the `static/` assets. Keep this routing configuration unless you intentionally change the deployment architecture.
 
 ## First request / database
 The app creates its PostgreSQL tables on the first request for each serverless instance. `app_meta` guards the one-time removal of the three legacy demo name/price pairs and one-time insertion of three sample products. Review the cleanup block in `app.py` before first deployment if those exact name/price pairs could represent real merchandise. Sample products are created once; deleting them later does not cause them to be reinserted.

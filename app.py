@@ -419,10 +419,6 @@ _db_ready = False
 @app.before_request
 def ensure_db():
     global _db_ready
-    # The storefront shell and static assets should still load during a DB outage.
-    # /health performs its own guarded connection check and must return JSON, not a Flask 500.
-    if request.path == '/' or request.path == '/health' or request.path.startswith('/static/'):
-        return
     if not _db_ready:
         init_db()
         _db_ready = True
